@@ -7,6 +7,7 @@ import type {
 } from "../types";
 import { formatCurrency } from "./calculations";
 import dayjs from "dayjs";
+import QRCode from "qrcode";
 
 export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
   // Company information
@@ -1370,15 +1371,35 @@ export const generateExpenseInvoicePDF = (
         <!-- Totals -->
         <div class="totals-section">
           <div class="total-row">
-            <span class="total-label">عدد المصروفات:</span>
-            <span class="total-value">${expenseInvoice.expenses.length}</span>
+            <span class="total-label">المجموع الفرعي:</span>
+            <span class="total-value">${formatCurrency(expenseInvoice.totalAmount)}</span>
           </div>
+          ${
+            client.profitPercentage && client.profitPercentage > 0
+              ? `
+          <div class="total-row">
+            <span class="total-label">نسبة الشركة (${client.profitPercentage}%):</span>
+            <span class="total-value">${formatCurrency(
+              (expenseInvoice.totalAmount * client.profitPercentage) / 100
+            )}</span>
+          </div>
+          <div class="total-row final">
+            <span class="total-label">الإجمالي الكلي:</span>
+            <span class="total-value">${formatCurrency(
+              expenseInvoice.totalAmount +
+                (expenseInvoice.totalAmount * client.profitPercentage) / 100
+            )}</span>
+          </div>
+          `
+              : `
           <div class="total-row final">
             <span class="total-label">الإجمالي:</span>
             <span class="total-value">${formatCurrency(
               expenseInvoice.totalAmount
             )}</span>
           </div>
+          `
+          }
         </div>
         
         ${
@@ -2066,6 +2087,13 @@ export const generateExpenseInvoicesSummaryPDF = (
     0
   );
 
+  // Calculate total profit
+  const totalProfit = expenseInvoices.reduce((sum, inv) => {
+    const client = clients.find((c) => c.id === inv.clientId);
+    const percentage = client?.profitPercentage || 0;
+    return sum + (inv.totalAmount * percentage) / 100;
+  }, 0);
+
   // Generate HTML for the expense invoices summary
   const htmlContent = `
     <!DOCTYPE html>
@@ -2522,8 +2550,17 @@ export const generateExpenseInvoicesSummaryPDF = (
             <div class="summary-card-value">${expenseInvoices.length}</div>
           </div>
           <div class="summary-card">
-            <div class="summary-card-label">إجمالي المصروفات</div>
             <div class="summary-card-value">${totalExpenses}</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">إجمالي الأرباح</div>
+            <div class="summary-card-value">${formatCurrency(totalProfit)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">الإجمالي الكلي</div>
+            <div class="summary-card-value">${formatCurrency(
+              totalAmount + totalProfit
+            )}</div>
           </div>
           <div class="summary-card">
             <div class="summary-card-label">تاريخ التقرير</div>
@@ -2660,9 +2697,19 @@ export const generateExpenseInvoicesSummaryPDF = (
         
         <!-- Totals -->
         <div class="totals-section">
+          <div class="total-row">
+            <span class="total-label">إجمالي الفواتير:</span>
+            <span class="total-value">${formatCurrency(totalAmount)}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">إجمالي الأرباح:</span>
+            <span class="total-value">${formatCurrency(totalProfit)}</span>
+          </div>
           <div class="total-row final">
             <span class="total-label">الإجمالي الكلي:</span>
-            <span class="total-value">${formatCurrency(totalAmount)}</span>
+            <span class="total-value">${formatCurrency(
+              totalAmount + totalProfit
+            )}</span>
           </div>
         </div>
         
@@ -2718,7 +2765,7 @@ export const generateFinalReportPDF = (
     totalExpenses > 0 && profitPercentage > 0
       ? (totalExpenses * profitPercentage) / 100
       : 0;
-  const remaining = totalPayments - totalExpenses;
+  const remaining = totalPayments - (totalExpenses + profit);
 
   // Group expenses by date
   const expensesByDate = expenses.reduce((acc, exp) => {
@@ -3677,6 +3724,12 @@ export const generateFinalReportPDF = (
               <div class="calculation-label">نسبة الربح (${profitPercentage}%)</div>
               <div class="calculation-value" style="color: #f59e0b;">${formatCurrency(
                 profit
+              )}</div>
+            </div>
+            <div class="calculation-item">
+              <div class="calculation-label">إجمالي المصروفات + النسبة</div>
+              <div class="calculation-value" style="color: #dc2626;">${formatCurrency(
+                totalExpenses + profit
               )}</div>
             </div>
             <div class="calculation-item">

@@ -17,6 +17,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -30,9 +31,11 @@ import {
   Logout,
   AccountCircle,
 } from '@mui/icons-material';
+import { Icon } from '@iconify/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { BackupDialog } from './BackupDialog';
 
 const drawerWidth = 260;
 
@@ -48,6 +51,7 @@ export const Layout = ({ children }: LayoutProps) => {
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   
   const themeMode = useThemeStore((state) => state.mode);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -117,13 +121,15 @@ export const Layout = ({ children }: LayoutProps) => {
                   color: location.pathname === item.path 
                     ? theme.palette.primary.contrastText 
                     : 'inherit',
-                  minWidth: 44,
-                  marginLeft: '8px',
+                  minWidth: 40, // Standard width
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText 
+                primary={item.text} 
+                sx={{ textAlign: 'right' }} // Verify text alignment
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -154,9 +160,21 @@ export const Layout = ({ children }: LayoutProps) => {
             نظام إدارة الديون والفواتير
           </Typography>
 
-          <IconButton color="inherit" onClick={toggleTheme} sx={{ marginLeft: '8px' }}>
-            {themeMode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
+          <Tooltip title="النسخ الاحتياطي">
+            <IconButton 
+              color="inherit" 
+              onClick={() => setBackupDialogOpen(true)} 
+              sx={{ marginLeft: '8px' }}
+            >
+              <Icon icon="mdi:database-export" width={24} height={24} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title={themeMode === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}>
+            <IconButton color="inherit" onClick={toggleTheme} sx={{ marginLeft: '8px' }}>
+              {themeMode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+          </Tooltip>
 
           <IconButton color="inherit" onClick={handleMenuClick} sx={{ marginLeft: '8px' }}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
@@ -173,13 +191,13 @@ export const Layout = ({ children }: LayoutProps) => {
               horizontal: 'right',
             }}
           >
-            <MenuItem disabled>
-              <AccountCircle sx={{ marginLeft: '8px' }} />
-              {user?.displayName || user?.email}
+            <MenuItem disabled sx={{ display: 'flex', gap: 2 }}>
+              <AccountCircle />
+              <Typography variant="body2">{user?.displayName || user?.email}</Typography>
             </MenuItem>
             <Divider />
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ marginLeft: '8px' }} />
+            <MenuItem onClick={handleLogout} sx={{ display: 'flex', gap: 2 }}>
+              <Logout />
               تسجيل الخروج
             </MenuItem>
           </Menu>
@@ -233,6 +251,12 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         {children}
       </Box>
+
+      {/* Backup Dialog */}
+      <BackupDialog 
+        open={backupDialogOpen} 
+        onClose={() => setBackupDialogOpen(false)} 
+      />
     </Box>
   );
 };

@@ -19,7 +19,9 @@ import {
   Logout,
   ChevronLeft,
   TrendingUp,
+  CloudSync,
 } from "@mui/icons-material";
+import { BackupDialog } from "@/components/BackupDialog";
 import { useDataStore } from "@/store/useDataStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useThemeStore } from "@/store/useThemeStore";
@@ -33,6 +35,7 @@ export const HomePage = () => {
   const { user, logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const [profitRecalcTrigger, setProfitRecalcTrigger] = useState(0);
+  const [openBackup, setOpenBackup] = useState(false);
 
   // Listen for storage changes to update profit calculation
   useEffect(() => {
@@ -136,71 +139,73 @@ export const HomePage = () => {
       >
         <Container maxWidth="sm">
           {/* Top Bar */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mb: 3 }}
-          >
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar
-                sx={{
-                  width: 45,
-                  height: 45,
-                  bgcolor: "rgba(255,255,255,0.25)",
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                }}
-              >
-                {user?.displayName?.charAt(0) ||
-                  user?.email.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem" }}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 3,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{
+                    width: 45,
+                    height: 45,
+                    bgcolor: "rgba(255,255,255,0.25)",
+                    fontSize: "1.2rem",
+                    fontWeight: 700,
+                  }}
                 >
-                  مرحباً
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ color: "white", fontWeight: 700, fontSize: "1rem" }}
-                >
-                  {user?.displayName || user?.email.split("@")[0]}
-                </Typography>
+                  {user?.displayName?.charAt(0) ||
+                    user?.email.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem" }}
+                  >
+                    مرحباً
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "white", fontWeight: 700, fontSize: "1rem" }}
+                  >
+                    {user?.displayName || user?.email.split("@")[0]}
+                  </Typography>
+                </Box>
               </Box>
-            </Stack>
-            <Stack direction="row" spacing={1.5}>
-              <IconButton
-                onClick={toggleTheme}
-                sx={{
-                  color: "white",
-                  bgcolor: "rgba(255,255,255,0.15)",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
-                  margin: "8px",
-                }}
-                size="small"
-              >
-                {mode === "dark" ? (
-                  <Brightness7 fontSize="small" />
-                ) : (
-                  <Brightness4 fontSize="small" />
-                )}
-              </IconButton>
-              <IconButton
-                onClick={handleLogout}
-                sx={{
-                  color: "white",
-                  bgcolor: "rgba(255,255,255,0.15)",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
-                  margin: "8px",
-                }}
-                size="small"
-              >
-                <Logout fontSize="small" />
-              </IconButton>
-            </Stack>
-          </Stack>
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <IconButton
+                  onClick={toggleTheme}
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                    margin: "0 !important", // Remove potential margin interference
+                  }}
+                  size="small"
+                >
+                  {mode === "dark" ? (
+                    <Brightness7 fontSize="small" />
+                  ) : (
+                    <Brightness4 fontSize="small" />
+                  )}
+                </IconButton>
+                <IconButton
+                  onClick={handleLogout}
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                    margin: "0 !important",
+                  }}
+                  size="small"
+                >
+                  <Logout fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
 
           {/* Title */}
           <Box sx={{ textAlign: "center", mb: 3 }}>
@@ -319,12 +324,14 @@ export const HomePage = () => {
               }}
             >
               <CardContent sx={{ p: 2 }}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center">
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <Box
                       sx={{
                         width: 50,
@@ -334,6 +341,7 @@ export const HomePage = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        flexShrink: 0, // Prevent shrinking
                       }}
                     >
                       <item.icon sx={{ fontSize: 26, color: item.color }} />
@@ -346,13 +354,78 @@ export const HomePage = () => {
                         اضغط للدخول
                       </Typography>
                     </Box>
-                  </Stack>
+                  </Box>
                   <ChevronLeft sx={{ color: "text.secondary" }} />
-                </Stack>
+                </Box>
               </CardContent>
             </Card>
           ))}
         </Stack>
+
+        {/* Backup Section */}
+        <Typography
+          variant="h6"
+          fontWeight={700}
+          sx={{ mb: 2, px: 0.5, mt: 4 }}
+        >
+          النظام
+        </Typography>
+
+        <Card
+          onClick={() => setOpenBackup(true)}
+          sx={{
+            borderRadius: 2.5,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            cursor: "pointer",
+            transition: "all 0.2s",
+            border:
+              theme.palette.mode === "dark"
+                ? "1px solid rgba(255,255,255,0.1)"
+                : "none",
+            "&:active": {
+              transform: "scale(0.98)",
+            },
+          }}
+        >
+          <CardContent sx={{ p: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Box
+                  sx={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 2,
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(99, 102, 241, 0.2)"
+                        : "#e0e7ff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <CloudSync sx={{ fontSize: 26, color: "#6366f1" }} />
+                </Box>
+                <Box>
+                  <Typography variant="body1" fontWeight={700}>
+                    النسخ الاحتياطي
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    حفظ واستعادة البيانات
+                  </Typography>
+                </Box>
+              </Box>
+              <ChevronLeft sx={{ color: "text.secondary" }} />
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* Footer */}
         <Box sx={{ textAlign: "center", mt: 4, opacity: 0.6 }}>
@@ -361,6 +434,7 @@ export const HomePage = () => {
           </Typography>
         </Box>
       </Container>
+      <BackupDialog open={openBackup} onClose={() => setOpenBackup(false)} />
     </Box>
   );
 };

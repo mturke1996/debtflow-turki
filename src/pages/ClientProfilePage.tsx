@@ -465,15 +465,15 @@ export const ClientProfilePage = () => {
     );
     const totalPaid = clientPayments.reduce((sum, pay) => sum + pay.amount, 0);
 
-    // المتبقي = المدفوع - المصروفات
-    const remaining = totalPaid - totalExpenses;
-
     // نسبة الربح
     const profitPercentage = client?.profitPercentage || 0;
     const profit =
       totalExpenses > 0 && profitPercentage > 0
         ? (totalExpenses * profitPercentage) / 100
         : 0;
+
+    // المتبقي = المدفوع - (المصروفات + الربح)
+    const remaining = totalPaid - (totalExpenses + profit);
 
     return {
       totalExpenses,
@@ -1106,14 +1106,14 @@ export const ClientProfilePage = () => {
                       mb: 0.25,
                     }}
                   >
-                    المصروفات
+                    المصروفات + النسبة
                   </Typography>
                   <Typography
                     variant="body2"
                     fontWeight={800}
                     sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
                   >
-                    {formatCurrency(summary.totalExpenses)}
+                    {formatCurrency(summary.totalExpenses + summary.profit)}
                   </Typography>
                 </CardContent>
               </Card>
@@ -1702,26 +1702,55 @@ export const ClientProfilePage = () => {
                   }}
                 >
                   <CardContent sx={{ p: 2.5 }}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 1.5 }}
-                    >
-                      <Typography
-                        variant="h6"
-                        fontWeight={900}
-                        color="text.primary"
+                    <Stack spacing={1.5} sx={{ mb: 2 }}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        المجموع الكلي
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        fontWeight={900}
-                        color="text.primary"
+                        <Typography variant="body1" color="text.secondary">
+                          إجمالي المصروفات
+                        </Typography>
+                        <Typography variant="body1" fontWeight={700}>
+                          {formatCurrency(summary.totalExpenses)}
+                        </Typography>
+                      </Stack>
+                      
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        {formatCurrency(summary.totalExpenses)}
-                      </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                          نسبة الربح ({summary.profitPercentage}%)
+                        </Typography>
+                        <Typography variant="body1" fontWeight={700} color="warning.main">
+                          {formatCurrency(summary.profit)}
+                        </Typography>
+                      </Stack>
+
+                      <Divider sx={{ borderStyle: 'dashed' }} />
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Typography
+                          variant="h6"
+                          fontWeight={900}
+                          color="text.primary"
+                        >
+                          المجموع الكلي
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          fontWeight={900}
+                          color="error.main"
+                        >
+                          {formatCurrency(summary.totalExpenses + summary.profit)}
+                        </Typography>
+                      </Stack>
                     </Stack>
                     <Button
                       variant="contained"
@@ -1856,9 +1885,18 @@ export const ClientProfilePage = () => {
                               </tbody>
                             </table>
                             <div class="total">
-                              <h3>المجموع الكلي: ${formatCurrency(
-                                summary.totalExpenses
-                              )}</h3>
+                              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 10px;">
+                                <span>إجمالي المصروفات:</span>
+                                <strong>${formatCurrency(summary.totalExpenses)}</strong>
+                              </div>
+                              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 10px;">
+                                <span>نسبة الربح (${summary.profitPercentage}%):</span>
+                                <strong>${formatCurrency(summary.profit)}</strong>
+                              </div>
+                              <div style="display: flex; justify-content: space-between; font-size: 18px; margin-top: 5px;">
+                                <span>المجموع الكلي:</span>
+                                <strong>${formatCurrency(summary.totalExpenses + summary.profit)}</strong>
+                              </div>
                             </div>
                           </body>
                           </html>

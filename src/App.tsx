@@ -7,6 +7,7 @@ import {
   Box,
 } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
 import { createAppTheme } from "./theme";
 import { useThemeStore } from "./store/useThemeStore";
 import { useAuthStore } from "./store/useAuthStore";
@@ -114,6 +115,32 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: themeMode === 'dark' ? '#1e293b' : '#ffffff',
+              color: themeMode === 'dark' ? '#f1f5f9' : '#0f172a',
+              borderRadius: '12px',
+              padding: '16px',
+              fontFamily: 'Cairo, sans-serif',
+              fontWeight: 600,
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#ffffff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#ffffff',
+              },
+            },
+          }}
+        />
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>

@@ -219,47 +219,60 @@ export const PaymentsPage = () => {
         }}
       >
         <Container maxWidth="sm">
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <IconButton onClick={() => navigate('/')} sx={{ color: 'white', marginLeft: '8px' }}>
-              <ArrowBack />
-            </IconButton>
-            <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1 }}>
-              المدفوعات ({payments.length})
-            </Typography>
-            <Stack direction="row" spacing={1.5}>
-              {payments.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              spacing={2}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <IconButton onClick={() => navigate('/')} sx={{ color: 'white', ml: 1 }}>
+                  <ArrowBack />
+                </IconButton>
+                <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1 }}>
+                  المدفوعات ({payments.length})
+                </Typography>
+              </Box>
+              
+              <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                {payments.length > 0 && (
+                  <Button
+                    variant="contained"
+                    onClick={handleShareTotal}
+                    fullWidth={true} // Full width on mobile via stack stretch
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 700,
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                      borderRadius: 2,
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      flex: 1,
+                    }}
+                    startIcon={<Share />}
+                  >
+                    مشاركة
+                  </Button>
+                )}
                 <Button
                   variant="contained"
-                  onClick={handleShareTotal}
+                  onClick={() => handleOpenDialog()}
+                  fullWidth={true}
                   sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
+                    bgcolor: 'white',
+                    color: 'success.main',
                     fontWeight: 700,
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
                     borderRadius: 2,
-                    border: '1px solid rgba(255,255,255,0.3)',
+                    flex: 1,
                   }}
-                  startIcon={<Share />}
+                  startIcon={<Add />}
                 >
-                  مشاركة المجموع
+                  جديدة
                 </Button>
-              )}
-            <Button
-              variant="contained"
-              onClick={() => handleOpenDialog()}
-              sx={{
-                bgcolor: 'white',
-                color: 'success.main',
-                fontWeight: 700,
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
-                borderRadius: 2,
-              }}
-              startIcon={<Add />}
-            >
-              جديدة
-            </Button>
+              </Stack>
             </Stack>
-          </Stack>
+          </Box>
 
           {/* Stats Card */}
           <Card
@@ -285,10 +298,10 @@ export const PaymentsPage = () => {
                 <Avatar
                   sx={{
                     bgcolor: 'rgba(255,255,255,0.2)',
-                    width: 50,
-                    height: 50,
+                    width: { xs: 40, sm: 50 },
+                    height: { xs: 40, sm: 50 },
                     flexShrink: 0,
-                    marginLeft: '24px',
+                    marginLeft: { xs: '16px', sm: '24px' },
                   }}
                 >
                   <PaymentIcon sx={{ fontSize: 28 }} />
@@ -377,15 +390,15 @@ export const PaymentsPage = () => {
                     border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.1)' : 'none',
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
+                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     <Stack direction="row" alignItems="flex-start" spacing={0}>
                       <Avatar
                         sx={{
                           bgcolor: 'success.light',
-                          width: 48,
-                          height: 48,
+                          width: { xs: 40, sm: 48 },
+                          height: { xs: 40, sm: 48 },
                           flexShrink: 0,
-                          marginLeft: '24px',
+                          marginLeft: { xs: '12px', sm: '24px' },
                         }}
                       >
                         <PaymentIcon sx={{ color: 'success.main', fontSize: 20 }} />
@@ -418,14 +431,15 @@ export const PaymentsPage = () => {
                         </Typography>
                       </Box>
 
-                      <Stack direction="row" spacing={2} sx={{ ml: 1 }}>
+                      <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
                         <IconButton
                           size="small"
                           onClick={() => handleOpenDialog(payment)}
                           sx={{ 
                             color: 'primary.main',
-                            width: 36,
-                            height: 36,
+                            width: 32,
+                            height: 32,
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                           }}
                         >
                           <Edit fontSize="small" />
@@ -435,8 +449,9 @@ export const PaymentsPage = () => {
                           color="error"
                           onClick={() => handleDelete(payment.id)}
                           sx={{
-                            width: 36,
-                            height: 36,
+                            width: 32,
+                            height: 32,
+                            bgcolor: 'rgba(211, 47, 47, 0.1)',
                           }}
                         >
                           <Delete fontSize="small" />

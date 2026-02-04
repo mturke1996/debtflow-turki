@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التحديثات - DebtFlow Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #6366f1;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .status {
+            background: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .info {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: right;
+        }
+        
+        .info h3 {
+            color: #6366f1;
+            margin-bottom: 15px;
+        }
+        
+        .info ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .info li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .info li:last-child {
+            border-bottom: none;
+        }
+        
+        .check {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ DebtFlow Pro</h1>
+        <div class="status">
+            ✅ التحديثات مثبتة بنجاح!
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ مهم:</strong> الخادم يعمل الآن على المنفذ <strong>3002</strong>
+        </div>
+        
+        <div class="info">
+            <h3>التحديثات المثبتة:</h3>
+            <ul>
+                <li><span class="check">✓</span> ألوان عصرية جديدة (بنفسجي ووردي)</li>
+                <li><span class="check">✓</span> رسوم متحركة سلسة</li>
+                <li><span class="check">✓</span> نظام النسخ الاحتياطي (Excel)</li>
+                <li><span class="check">✓</span> إشعارات Toast جميلة</li>
+                <li><span class="check">✓</span> أيقونات حديثة</li>
+                <li><span class="check">✓</span> تحسينات للهاتف المحمول</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>كيفية رؤية التحديثات:</h3>
+            <ul>
+                <li>1️⃣ افتح الرابط أدناه</li>
+                <li>2️⃣ اضغط Ctrl + Shift + R لتحديث الصفحة</li>
+                <li>3️⃣ ابحث عن أيقونة قاعدة البيانات في الأعلى</li>
+                <li>4️⃣ لاحظ الألوان البنفسجية الجديدة</li>
+            </ul>
+        </div>
+        
+        <a href="http://localhost:3002/" class="btn" target="_blank">
+            🚀 افتح التطبيق الآن
+        </a>
+        
+        <div style="margin-top: 30px; color: #6b7280; font-size: 0.9em;">
+            <p>إذا لم تظهر التحديثات، تأكد من:</p>
+            <p>• فتح الرابط الصحيح (المنفذ 3002)</p>
+            <p>• مسح الذاكرة المؤقتة (Ctrl + Shift + R)</p>
+            <p>• استخدام متصفح حديث (Chrome, Firefox, Edge)</p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-open the app after 2 seconds
+        setTimeout(() => {
+            const shouldOpen = confirm('هل تريد فتح التطبيق الآن؟');
+            if (shouldOpen) {
+                window.open('http://localhost:3002/', '_blank');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
