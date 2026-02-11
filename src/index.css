@@ -22,15 +22,21 @@ body {
   min-height: 100vh;
 }
 
-/* Modern CSS Variables */
+/* Premium CSS Variables */
 :root {
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.18);
+  --shadow-glow: 0 0 40px -10px rgba(26, 58, 92, 0.15);
+  --gold: #c9a54e;
+  --gold-light: #e4c76e;
+  --navy: #1a3a5c;
+  --navy-dark: #0c1524;
 }
 
 /* Enhanced Typography */
@@ -47,36 +53,36 @@ input[type="number"] {
 
 /* Enhanced Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 5px;
+  background: #eef1f6;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-  border-radius: 5px;
+  background: linear-gradient(180deg, #b0bec5 0%, #90a4ae 100%);
+  border-radius: 4px;
   transition: background var(--transition-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  background: linear-gradient(180deg, #90a4ae 0%, #78909c 100%);
 }
 
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #0c1524;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  background: linear-gradient(180deg, #2d4a6a 0%, #3d6590 100%);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  background: linear-gradient(180deg, #3d6590 0%, #5a8fc4 100%);
 }
 
 /* Keyframe Animations */
@@ -92,7 +98,7 @@ input[type="number"] {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -103,7 +109,7 @@ input[type="number"] {
 @keyframes fadeInDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-24px);
   }
   to {
     opacity: 1;
@@ -136,7 +142,7 @@ input[type="number"] {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
   to {
     opacity: 1;
@@ -149,7 +155,7 @@ input[type="number"] {
     opacity: 1;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.7;
   }
 }
 
@@ -176,7 +182,36 @@ input[type="number"] {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 8px 0 rgba(201, 165, 78, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(201, 165, 78, 0.15);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -186,11 +221,11 @@ input[type="number"] {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp var(--transition-base) ease-out;
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-fade-in-down {
-  animation: fadeInDown var(--transition-base) ease-out;
+  animation: fadeInDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-slide-in-right {
@@ -202,7 +237,7 @@ input[type="number"] {
 }
 
 .animate-scale-in {
-  animation: scaleIn var(--transition-base) ease-out;
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-pulse {
@@ -214,16 +249,41 @@ input[type="number"] {
 }
 
 .animate-bounce {
-  animation: bounce 1s ease-in-out infinite;
+  animation: bounce 1.5s ease-in-out infinite;
 }
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.35s; }
 
 /* Skeleton Loading */
 .skeleton {
   background: linear-gradient(
     90deg,
-    #f0f0f0 0%,
-    #e0e0e0 50%,
-    #f0f0f0 100%
+    #eef1f6 0%,
+    #dde3ed 50%,
+    #eef1f6 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -233,29 +293,44 @@ input[type="number"] {
 .dark .skeleton {
   background: linear-gradient(
     90deg,
-    #1e293b 0%,
-    #334155 50%,
-    #1e293b 100%
+    #162032 0%,
+    #1e3048 50%,
+    #162032 100%
   );
   background-size: 200% 100%;
 }
 
-/* Glassmorphism Utility */
+/* Premium Glassmorphism */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .dark .glass {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(22, 32, 50, 0.75);
+  border: 1px solid rgba(90, 143, 196, 0.12);
 }
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #1a3a5c 0%, #c9a54e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, #5a8fc4 0%, #d4af5a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gold accent gradient */
+.gradient-gold {
+  background: linear-gradient(135deg, #c9a54e 0%, #e4c76e 50%, #c9a54e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -276,11 +351,12 @@ input[type="number"] {
 
 /* Hover Effects */
 .hover-lift {
-  transition: transform var(--transition-base);
+  transition: all var(--transition-base);
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
 }
 
 .hover-scale {
@@ -288,12 +364,21 @@ input[type="number"] {
 }
 
 .hover-scale:hover {
-  transform: scale(1.05);
+  transform: scale(1.04);
+}
+
+/* Premium glow effect on hover */
+.hover-glow {
+  transition: all var(--transition-base);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px -5px rgba(201, 165, 78, 0.25);
 }
 
 /* Focus Visible Enhancement */
 *:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--navy);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -357,4 +442,15 @@ input[type="number"] {
 /* Fix ListItemIcon spacing in RTL */
 .MuiListItemIcon-root {
   min-width: 40px;
+}
+
+/* Enhanced selection colors */
+::selection {
+  background: rgba(201, 165, 78, 0.25);
+  color: inherit;
+}
+
+::-moz-selection {
+  background: rgba(201, 165, 78, 0.25);
+  color: inherit;
 }

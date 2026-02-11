@@ -85,12 +85,25 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const drawer = (
     <Box>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
-          DebtFlow Pro
-        </Typography>
+      <Toolbar sx={{ py: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="logo"
+            sx={{ width: 36, height: 36 }}
+          />
+          <Box>
+            <Typography variant="body2" noWrap sx={{ fontWeight: 800, fontSize: '0.88rem', color: 'text.primary', letterSpacing: 0.2 }}>
+              م. محمد سالم التركي
+            </Typography>
+            <Typography variant="caption" noWrap sx={{ color: '#c9a54e', fontWeight: 600, fontSize: '0.72rem' }}>
+              إنشاءات وتعهدات
+            </Typography>
+          </Box>
+        </Box>
       </Toolbar>
-      <Divider />
+      <Divider sx={{ borderColor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.08)' : 'rgba(26, 58, 92, 0.06)' }} />
       <List sx={{ px: 1, py: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
@@ -101,34 +114,42 @@ export const Layout = ({ children }: LayoutProps) => {
                 if (isMobile) setMobileOpen(false);
               }}
               sx={{
-                borderRadius: 2,
+                borderRadius: 2.5,
                 mx: 1,
                 py: 1.5,
+                transition: 'all 0.2s ease',
                 '&.Mui-selected': {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
+                  backgroundColor: theme.palette.mode === 'dark' ? '#1a3a5c' : '#1a3a5c',
+                  color: 'white',
+                  boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
                   '&:hover': {
-                    backgroundColor: theme.palette.primary.dark,
+                    backgroundColor: '#0e2440',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: theme.palette.primary.contrastText,
+                    color: 'white',
                   },
+                },
+                '&:hover:not(.Mui-selected)': {
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.06)' : 'rgba(26, 58, 92, 0.04)',
                 },
               }}
             >
               <ListItemIcon
                 sx={{
                   color: location.pathname === item.path 
-                    ? theme.palette.primary.contrastText 
+                    ? 'white' 
                     : 'inherit',
-                  minWidth: 40, // Standard width
+                  minWidth: 40,
                 }}
               >
                 {item.icon}
               </ListItemIcon>
               <ListItemText 
                 primary={item.text} 
-                sx={{ textAlign: 'right' }} // Verify text alignment
+                sx={{ 
+                  textAlign: 'right',
+                  '& .MuiTypography-root': { fontWeight: location.pathname === item.path ? 700 : 500 },
+                }} 
               />
             </ListItemButton>
           </ListItem>
@@ -157,7 +178,7 @@ export const Layout = ({ children }: LayoutProps) => {
           </IconButton>
           
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            نظام إدارة الديون والفواتير
+            نظام إدارة الإنشاءات والفواتير
           </Typography>
 
           <Tooltip title="النسخ الاحتياطي">
@@ -177,7 +198,15 @@ export const Layout = ({ children }: LayoutProps) => {
           </Tooltip>
 
           <IconButton color="inherit" onClick={handleMenuClick} sx={{ marginLeft: '8px' }}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+            <Avatar sx={{ 
+              width: 34, 
+              height: 34, 
+              bgcolor: 'rgba(201, 165, 78, 0.15)', 
+              color: '#c9a54e',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              border: '1.5px solid rgba(201, 165, 78, 0.25)',
+            }}>
               {user?.displayName?.charAt(0) || user?.email.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>

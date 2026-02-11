@@ -59,28 +59,77 @@ export const LoginPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(160deg, #0a1628 0%, #162a44 40%, #1a3550 70%, #122840 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(ellipse at 25% 15%, rgba(201, 165, 78, 0.1) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(90, 143, 196, 0.06) 0%, transparent 50%)',
+          pointerEvents: 'none',
+        },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: '10%',
+          right: '-10%',
+          width: '500px',
+          height: '500px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(201, 165, 78, 0.04) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        },
       }}
     >
-      <Container maxWidth="sm">
+      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
         <Card
           sx={{
-            borderRadius: 4,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            borderRadius: 5,
+            boxShadow: '0 24px 64px -12px rgba(0,0,0,0.5)',
+            background: 'linear-gradient(165deg, rgba(255,255,255,0.97), rgba(248,250,252,0.99))',
+            border: '1px solid rgba(201, 165, 78, 0.15)',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #1a3a5c, #c9a54e, #1a3a5c)',
+            },
           }}
         >
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ p: 4, pt: 5 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                DebtFlow Pro
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="شعار م. محمد سالم التركي"
+                sx={{
+                  width: 88,
+                  height: 88,
+                  mb: 2,
+                  filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.12))',
+                }}
+              />
+              <Typography variant="h5" fontWeight={900} gutterBottom sx={{ color: '#1a2a3e', letterSpacing: 0.5 }}>
+                م. محمد سالم التركي
               </Typography>
-              <Typography variant="body1" color="text.secondary">
-                نظام إدارة الديون والفواتير
+              <Typography variant="body2" sx={{ color: '#c9a54e', fontWeight: 700, mb: 0.5, letterSpacing: 0.5 }}>
+                إنشاءات وتعهدات
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ letterSpacing: 0.2 }}>
+                نظام إدارة الفواتير والمصروفات
               </Typography>
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>
                 {error}
               </Alert>
             )}
@@ -99,6 +148,16 @@ export const LoginPage = () => {
                     helperText={errors.email?.message}
                     margin="normal"
                     autoComplete="email"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#1a3a5c',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#1a3a5c',
+                      },
+                    }}
                   />
                 )}
               />
@@ -116,6 +175,16 @@ export const LoginPage = () => {
                     helperText={errors.password?.message}
                     margin="normal"
                     autoComplete="current-password"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#1a3a5c',
+                        },
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#1a3a5c',
+                      },
+                    }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -139,21 +208,41 @@ export const LoginPage = () => {
                 size="large"
                 disabled={isLoading}
                 startIcon={<LoginIcon />}
-                sx={{ mt: 3, mb: 2, py: 1.5 }}
+                sx={{ 
+                  mt: 3, 
+                  mb: 2, 
+                  py: 1.5,
+                  bgcolor: '#1a3a5c',
+                  borderRadius: 3,
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  letterSpacing: 0.5,
+                  boxShadow: '0 6px 20px -4px rgba(26, 58, 92, 0.4)',
+                  '&:hover': {
+                    bgcolor: '#0e2440',
+                    boxShadow: '0 10px 28px -6px rgba(26, 58, 92, 0.5)',
+                    transform: 'translateY(-2px)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                  },
+                  transition: 'all 0.25s ease',
+                }}
               >
                 {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
             </form>
 
-            <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                للدخول التجريبي:
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Email: admin@debtflow.com
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Password: admin123
+            <Box sx={{ 
+              mt: 3, 
+              p: 2, 
+              bgcolor: 'rgba(201, 165, 78, 0.06)', 
+              borderRadius: 2.5, 
+              border: '1px solid rgba(201, 165, 78, 0.12)',
+              textAlign: 'center',
+            }}>
+              <Typography variant="caption" sx={{ color: '#c9a54e', fontWeight: 600, letterSpacing: 0.3 }} display="block">
+                📍 تاجوراء ليبيا | 📞 0911191263
               </Typography>
             </Box>
           </CardContent>
@@ -163,12 +252,11 @@ export const LoginPage = () => {
           variant="body2"
           color="white"
           textAlign="center"
-          sx={{ mt: 3, opacity: 0.9 }}
+          sx={{ mt: 3, opacity: 0.5, fontWeight: 500, letterSpacing: 0.3 }}
         >
-          © 2024 DebtFlow Pro. جميع الحقوق محفوظة
+          © 2024 م. محمد سالم التركي - جميع الحقوق محفوظة
         </Typography>
       </Container>
     </Box>
   );
 };
-

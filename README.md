@@ -1,110 +1,58 @@
-# DebtFlow Pro 💼
+# DebtFlow - نظام إدارة الإنشاءات والفواتير
 
-نظام إدارة الديون والفواتير الاحترافي للشركات
+نظام احترافي لإدارة الإنشاءات والمصروفات والمدفوعات والفواتير.
 
-## ✨ المميزات
+## م. محمد سالم التركي
+**إنشاءات وتعهدات** | تاجوراء، ليبيا
 
-- 🔐 تسجيل دخول آمن
-- 👥 إدارة العملاء الكاملة
-- 📄 إنشاء فواتير احترافية
-- 💰 تتبع المدفوعات
-- 📊 تحليلات مالية شاملة
-- 📱 تصميم متجاوب مع الهاتف
-- 🌙 وضع داكن
-- 📄 تصدير PDF عالي الجودة
-- 📱 مشاركة على الواتساب
+## المميزات
 
-## 🚀 النشر على Vercel
+- 👥 إدارة العملاء
+- 💰 تتبع المصروفات والمدفوعات
+- 📄 إنشاء الفواتير وتقارير PDF
+- 📊 لوحة تحكم مع إحصائيات شاملة
+- 🔥 Firebase للبيانات والمصادقة
+- 📱 تصميم متجاوب للهاتف المحمول
 
-### الطريقة الأولى: عبر GitHub
+## التقنيات المستخدمة
 
-1. ادفع الكود إلى GitHub:
-```bash
-git add .
-git commit -m "Initial commit"
-git push -u origin main
-```
+- **React 19** + **TypeScript**
+- **Material UI (MUI) v7**
+- **Firebase** (Auth + Firestore)
+- **Vite** للتجميع والبناء
+- **Zustand** لإدارة الحالة
+- **Day.js** لمعالجة التواريخ
 
-2. اذهب إلى [Vercel](https://vercel.com)
-3. سجل الدخول بحساب GitHub
-4. اضغط "New Project"
-5. اختر المستودع `DebtFlow-`
-6. Vercel سيكتشف الإعدادات تلقائياً
-7. اضغط "Deploy"
-
-### الطريقة الثانية: عبر Vercel CLI
+## التثبيت والتشغيل
 
 ```bash
-# تثبيت Vercel CLI
-npm i -g vercel
-
-# النشر
-vercel
-
-# للمتابعة
-vercel --prod
-```
-
-## 📦 التثبيت المحلي
-
-```bash
-# تثبيت المكتبات
+# تثبيت الاعتماديات
 npm install
 
-# تشغيل السيرفر المحلي
+# تشغيل بيئة التطوير
 npm run dev
 
-# بناء للمنتج
+# بناء للإنتاج
 npm run build
+
+# معاينة البناء
+npm run preview
 ```
 
-## 🔑 بيانات الدخول الافتراضية
+## النشر على Vercel
 
+1. ادفع المشروع إلى GitHub
+2. اربط المستودع في [Vercel](https://vercel.com)
+3. سيتم الكشف التلقائي عن إعدادات Vite
+4. اضغط **Deploy**
+
+## متغيرات البيئة (اختيارية)
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
 ```
-البريد: admin@debtflow.com
-كلمة المرور: admin123
-```
-
-## 🛠️ التقنيات المستخدمة
-
-- **React 19** - مكتبة الواجهات
-- **TypeScript** - الأمان النوعي
-- **Vite** - أداة البناء السريعة
-- **Material UI** - مكتبة المكونات
-- **Firebase** - قاعدة البيانات والمصادقة
-- **Zustand** - إدارة الحالة
-- **React Router** - التوجيه
-
-## 📱 المميزات الخاصة بالهاتف
-
-- تصميم متجاوب بالكامل
-- PDF محسّن للهاتف (A5)
-- مشاركة مباشرة على الواتساب
-- واجهة سهلة الاستخدام
-
-## 🌐 الروابط
-
-- **GitHub**: https://github.com/mturke1996/DebtFlow-
-- **Vercel**: سيتم إنشاء الرابط بعد النشر (اتبع الخطوات أعلاه)
-- **Firebase**: https://test-company-a0c68.web.app
-
-## 📝 ملاحظات للنشر على Vercel
-
-1. تأكد من إضافة متغيرات البيئة في Vercel:
-   - `VITE_FIREBASE_API_KEY`
-   - `VITE_FIREBASE_AUTH_DOMAIN`
-   - `VITE_FIREBASE_PROJECT_ID`
-   - `VITE_FIREBASE_STORAGE_BUCKET`
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
-   - `VITE_FIREBASE_APP_ID`
-
-2. Vercel سيكتشف الإعدادات تلقائياً من `vercel.json`
-3. المشروع جاهز للنشر مباشرة بعد ربطه مع GitHub
-
-## 📄 الترخيص
-
-استخدام خاص فقط
-
----
-
-**مبني بـ ❤️ لإدارة الديون والفواتير**

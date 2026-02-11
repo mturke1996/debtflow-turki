@@ -78,30 +78,46 @@ export const DashboardPage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+        background: theme.palette.mode === 'dark'
+          ? 'linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)'
+          : 'linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)',
         pb: 3,
       }}
     >
       {/* Header */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: theme.palette.mode === 'light'
+            ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
+            : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
           pt: 2,
           pb: 3,
           px: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+          },
         }}
       >
         <Container maxWidth="sm">
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={2}>
-              <IconButton onClick={() => navigate('/')} sx={{ color: 'white', marginLeft: '8px' }}>
+              <IconButton onClick={() => navigate('/')} sx={{ color: 'rgba(255,255,255,0.9)', marginLeft: '8px', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                 <ArrowBack />
               </IconButton>
-              <Typography variant="h5" fontWeight={800} sx={{ color: 'white' }}>
+              <Typography variant="h5" fontWeight={800} sx={{ color: 'white', letterSpacing: 0.3 }}>
                 لوحة التحكم
               </Typography>
             </Stack>
-            <IconButton onClick={toggleTheme} sx={{ color: 'white' }}>
+            <IconButton onClick={toggleTheme} sx={{ color: 'rgba(201, 165, 78, 0.85)', bgcolor: 'rgba(201, 165, 78, 0.08)', border: '1px solid rgba(201, 165, 78, 0.12)', '&:hover': { bgcolor: 'rgba(201, 165, 78, 0.16)' } }}>
               {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Stack>
@@ -114,10 +130,12 @@ export const DashboardPage = () => {
           <Grid item xs={6}>
             <Card
               sx={{
-                borderRadius: 2.5,
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #c44040 0%, #ad3333 100%)',
                 color: 'white',
-                boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
+                boxShadow: '0 6px 18px -4px rgba(196,64,64,0.35)',
+                transition: 'all 0.25s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 24px -4px rgba(196,64,64,0.4)' },
               }}
             >
               <CardContent sx={{ p: 3 }}>
@@ -135,10 +153,12 @@ export const DashboardPage = () => {
           <Grid item xs={6}>
             <Card
               sx={{
-                borderRadius: 2.5,
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #0d9668 0%, #087a54 100%)',
                 color: 'white',
-                boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                boxShadow: '0 6px 18px -4px rgba(13,150,104,0.35)',
+                transition: 'all 0.25s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 24px -4px rgba(13,150,104,0.4)' },
               }}
             >
               <CardContent sx={{ p: 2 }}>
@@ -156,10 +176,12 @@ export const DashboardPage = () => {
           <Grid item xs={6}>
             <Card
               sx={{
-                borderRadius: 2.5,
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #c9a54e 0%, #a88832 100%)',
                 color: 'white',
-                boxShadow: '0 4px 12px rgba(245,158,11,0.3)',
+                boxShadow: '0 6px 18px -4px rgba(201,165,78,0.35)',
+                transition: 'all 0.25s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 24px -4px rgba(201,165,78,0.4)' },
               }}
             >
               <CardContent sx={{ p: 2 }}>
@@ -177,10 +199,12 @@ export const DashboardPage = () => {
           <Grid item xs={6}>
             <Card
               sx={{
-                borderRadius: 2.5,
-                background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #c44070 0%, #a0284d 100%)',
                 color: 'white',
-                boxShadow: '0 4px 12px rgba(236,72,153,0.3)',
+                boxShadow: '0 6px 18px -4px rgba(196,64,112,0.35)',
+                transition: 'all 0.25s ease',
+                '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 10px 24px -4px rgba(196,64,112,0.4)' },
               }}
             >
               <CardContent sx={{ p: 2 }}>

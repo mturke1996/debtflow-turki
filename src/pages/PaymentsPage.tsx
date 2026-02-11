@@ -203,7 +203,9 @@ export const PaymentsPage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+        background: theme.palette.mode === 'dark'
+          ? 'linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)'
+          : 'linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)',
         pb: 3,
       }}
     >
@@ -211,11 +213,23 @@ export const PaymentsPage = () => {
       <Box
         sx={{
           background: theme.palette.mode === 'light' 
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-            : 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+            ? 'linear-gradient(160deg, #0d7a54 0%, #0d9668 100%)'
+            : 'linear-gradient(160deg, #087a54 0%, #0d9668 100%)',
           pt: 2,
           pb: 3,
           px: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+          },
         }}
       >
         <Container maxWidth="sm">
@@ -226,10 +240,10 @@ export const PaymentsPage = () => {
               spacing={2}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                <IconButton onClick={() => navigate('/')} sx={{ color: 'white', ml: 1 }}>
+                <IconButton onClick={() => navigate('/')} sx={{ color: 'rgba(255,255,255,0.9)', ml: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                   <ArrowBack />
                 </IconButton>
-                <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1 }}>
+                <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1, letterSpacing: 0.3 }}>
                   المدفوعات ({payments.length})
                 </Typography>
               </Box>
@@ -239,15 +253,16 @@ export const PaymentsPage = () => {
                   <Button
                     variant="contained"
                     onClick={handleShareTotal}
-                    fullWidth={true} // Full width on mobile via stack stretch
+                    fullWidth={true}
                     sx={{
-                      bgcolor: 'rgba(255,255,255,0.2)',
+                      bgcolor: 'rgba(255,255,255,0.15)',
                       color: 'white',
                       fontWeight: 700,
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                      borderRadius: 2,
-                      border: '1px solid rgba(255,255,255,0.3)',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+                      borderRadius: 2.5,
+                      border: '1px solid rgba(255,255,255,0.2)',
                       flex: 1,
+                      backdropFilter: 'blur(8px)',
                     }}
                     startIcon={<Share />}
                   >
@@ -259,12 +274,14 @@ export const PaymentsPage = () => {
                   onClick={() => handleOpenDialog()}
                   fullWidth={true}
                   sx={{
-                    bgcolor: 'white',
-                    color: 'success.main',
+                    bgcolor: 'rgba(201, 165, 78, 0.9)',
+                    color: '#1a2a3e',
                     fontWeight: 700,
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
-                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#c9a54e', transform: 'scale(1.04)' },
+                    borderRadius: 2.5,
                     flex: 1,
+                    boxShadow: '0 4px 14px -3px rgba(201, 165, 78, 0.4)',
+                    transition: 'all 0.25s ease',
                   }}
                   startIcon={<Add />}
                 >
@@ -275,16 +292,16 @@ export const PaymentsPage = () => {
           </Box>
 
           {/* Stats Card */}
-          <Card
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 2.5,
-              color: 'white',
-              boxShadow: 'none',
-            }}
-          >
+            <Card
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 3,
+                color: 'white',
+                boxShadow: 'none',
+              }}
+            >
             <CardContent sx={{ py: 2 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box sx={{ flexGrow: 1 }}>
@@ -320,9 +337,11 @@ export const PaymentsPage = () => {
               size="small"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: 'white',
-                  borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,0.95)',
+                  borderRadius: 3,
+                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
                   '& fieldset': { border: 'none' },
+                  '&:hover': { bgcolor: 'white' },
                 },
               }}
               InputProps={{
@@ -338,8 +357,9 @@ export const PaymentsPage = () => {
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
                 sx={{
-                  bgcolor: 'white',
-                  borderRadius: 2,
+                  bgcolor: 'rgba(255,255,255,0.95)',
+                  borderRadius: 3,
+                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
                   '& fieldset': { border: 'none' },
                 }}
               >
@@ -355,7 +375,7 @@ export const PaymentsPage = () => {
       </Box>
 
       {/* Payments List */}
-      <Container maxWidth="sm" sx={{ mt: -2 }}>
+      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
         <Stack spacing={3.5}>
           {filteredPayments.length === 0 ? (
             <Card sx={{ borderRadius: 2.5, textAlign: 'center', py: 6, bgcolor: 'background.paper' }}>
@@ -495,20 +515,20 @@ export const PaymentsPage = () => {
         fullScreen
         sx={{
           '& .MuiDialog-paper': {
-            bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#fff',
+            bgcolor: theme.palette.mode === 'dark' ? '#0f1a2e' : '#f4f6f9',
           },
         }}
       >
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box
-            sx={{
-              background: theme.palette.mode === 'light' 
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
-              color: 'white',
-              p: 2,
-            }}
-          >
+            <Box
+              sx={{
+                background: theme.palette.mode === 'light' 
+                  ? 'linear-gradient(160deg, #0d7a54 0%, #0d9668 100%)'
+                  : 'linear-gradient(160deg, #087a54 0%, #0d9668 100%)',
+                color: 'white',
+                p: 2,
+              }}
+            >
             <Stack direction="row" alignItems="center" spacing={2}>
               <IconButton onClick={handleCloseDialog} sx={{ color: 'white' }}>
                 <ArrowBack />

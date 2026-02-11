@@ -96,6 +96,7 @@ export const ClientProfilePage = () => {
     addDebtParty,
     updateDebtParty,
     updateClient,
+    deleteClient,
   } = useDataStore();
 
   // Menu items for quick navigation
@@ -103,30 +104,41 @@ export const ClientProfilePage = () => {
     {
       title: "المصروفات",
       icon: TrendingDown,
-      color: "#ef4444",
-      bgColor: "#fee2e2",
+      color: "#d64545",
+      bgColor:
+        theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.12)" : "rgba(214, 69, 69, 0.08)",
+      borderColor:
+        theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.2)" : "rgba(214, 69, 69, 0.12)",
       onClick: () => setExpensesListDialogOpen(true),
     },
     {
       title: "المدفوعات",
       icon: Payment,
-      color: "#10b981",
-      bgColor: "#d1fae5",
+      color: "#0d9668",
+      bgColor:
+        theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.12)" : "rgba(13, 150, 104, 0.08)",
+      borderColor:
+        theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.2)" : "rgba(13, 150, 104, 0.12)",
       onClick: () => setPaymentsListDialogOpen(true),
     },
     {
       title: "الديون",
       icon: CreditCard,
-      color: "#f59e0b",
-      bgColor: "#fef3c7",
+      color: "#c9a54e",
+      bgColor:
+        theme.palette.mode === "dark" ? "rgba(201, 165, 78, 0.12)" : "rgba(201, 165, 78, 0.08)",
+      borderColor:
+        theme.palette.mode === "dark" ? "rgba(201, 165, 78, 0.2)" : "rgba(201, 165, 78, 0.12)",
       onClick: () => setDebtsListDialogOpen(true),
     },
     {
       title: "حساب الأرباح",
       icon: TrendingUp,
-      color: "#8b5cf6",
+      color: "#5a8fc4",
       bgColor:
-        theme.palette.mode === "dark" ? "rgba(139, 92, 246, 0.2)" : "#ede9fe",
+        theme.palette.mode === "dark" ? "rgba(90, 143, 196, 0.12)" : "rgba(90, 143, 196, 0.08)",
+      borderColor:
+        theme.palette.mode === "dark" ? "rgba(90, 143, 196, 0.2)" : "rgba(90, 143, 196, 0.12)",
       onClick: () => setProfitDialogOpen(true),
     },
   ];
@@ -200,6 +212,25 @@ export const ClientProfilePage = () => {
     } catch (error: any) {
       setSnackbarMessage(error?.message || "حدث خطأ أثناء التحديث");
       setSnackbarOpen(true);
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    if (!clientId) return;
+    if (
+      window.confirm(
+        "هل أنت متأكد من حذف هذا العميل؟ سيتم حذف العميل نهائياً."
+      )
+    ) {
+      try {
+        await deleteClient(clientId);
+        setSnackbarMessage("تم حذف العميل بنجاح");
+        setSnackbarOpen(true);
+        navigate("/clients");
+      } catch (error: any) {
+        setSnackbarMessage(error?.message || "حدث خطأ أثناء الحذف");
+        setSnackbarOpen(true);
+      }
     }
   };
 
@@ -465,15 +496,15 @@ export const ClientProfilePage = () => {
     );
     const totalPaid = clientPayments.reduce((sum, pay) => sum + pay.amount, 0);
 
-    // نسبة الربح
+    // نسبة الربح - تؤخذ من إجمالي المدفوعات
     const profitPercentage = client?.profitPercentage || 0;
     const profit =
-      totalExpenses > 0 && profitPercentage > 0
-        ? (totalExpenses * profitPercentage) / 100
+      totalPaid > 0 && profitPercentage > 0
+        ? (totalPaid * profitPercentage) / 100
         : 0;
 
-    // المتبقي = المدفوع - (المصروفات + الربح)
-    const remaining = totalPaid - (totalExpenses + profit);
+    // المتبقي = المدفوع - المصروفات - الربح
+    const remaining = totalPaid - totalExpenses - profit;
 
     return {
       totalExpenses,
@@ -918,7 +949,9 @@ export const ClientProfilePage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: theme.palette.mode === "dark" ? "#0f172a" : "#f8fafc",
+        background: theme.palette.mode === "dark"
+          ? "linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)"
+          : "linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)",
         pb: 8,
       }}
     >
@@ -927,11 +960,23 @@ export const ClientProfilePage = () => {
         sx={{
           background:
             theme.palette.mode === "light"
-              ? "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)"
-              : "linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)",
+              ? "linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)"
+              : "linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)",
           pt: 2,
           pb: 4,
           px: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+          },
         }}
       >
         <Container maxWidth="sm">
@@ -943,11 +988,11 @@ export const ClientProfilePage = () => {
           >
             <IconButton
               onClick={() => navigate("/clients")}
-              sx={{ color: "white", marginLeft: "8px" }}
+              sx={{ color: "rgba(255,255,255,0.9)", marginLeft: "8px", '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
             >
               <ArrowBack />
             </IconButton>
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Box sx={{ flexGrow: 1, minWidth: 0, mr: 1 }}>
               <Typography
                 variant="h5"
                 fontWeight={800}
@@ -955,6 +1000,7 @@ export const ClientProfilePage = () => {
                   color: "white",
                   fontSize: { xs: "1.25rem", sm: "1.5rem" },
                   mb: 1,
+                  mt: 0.5,
                   wordBreak: "break-word",
                 }}
               >
@@ -975,11 +1021,12 @@ export const ClientProfilePage = () => {
                   spacing={1}
                   alignItems="center"
                   sx={{
-                    bgcolor: "rgba(255,255,255,0.15)",
+                    bgcolor: "rgba(201, 165, 78, 0.15)",
                     px: 1.5,
                     py: 0.75,
-                    borderRadius: 2,
+                    borderRadius: 2.5,
                     backdropFilter: "blur(10px)",
+                    border: '1px solid rgba(201, 165, 78, 0.2)',
                   }}
                 >
                   <Phone
@@ -1019,11 +1066,12 @@ export const ClientProfilePage = () => {
                 }}
                 sx={{
                   color: "white",
-                  bgcolor: "rgba(255,255,255,0.2)",
+                bgcolor: "rgba(201, 165, 78, 0.12)",
+                    border: '1px solid rgba(201, 165, 78, 0.2)',
                   width: { xs: 44, sm: 40 },
                   height: { xs: 44, sm: 40 },
                   "&:hover": {
-                    bgcolor: "rgba(255,255,255,0.3)",
+                    bgcolor: "rgba(201, 165, 78, 0.2)",
                     transform: "scale(1.05)",
                   },
                   "&:active": {
@@ -1040,11 +1088,12 @@ export const ClientProfilePage = () => {
                 onClick={() => setEditClientDialogOpen(true)}
                 sx={{
                   color: "white",
-                  bgcolor: "rgba(255,255,255,0.2)",
+                  bgcolor: "rgba(201, 165, 78, 0.12)",
+                    border: '1px solid rgba(201, 165, 78, 0.2)',
                   width: { xs: 44, sm: 40 },
                   height: { xs: 44, sm: 40 },
                   "&:hover": {
-                    bgcolor: "rgba(255,255,255,0.3)",
+                    bgcolor: "rgba(201, 165, 78, 0.2)",
                     transform: "scale(1.05)",
                   },
                   "&:active": {
@@ -1060,271 +1109,135 @@ export const ClientProfilePage = () => {
           </Stack>
 
           {/* Summary Cards */}
-          <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
-            <Grid size={{ xs: 6 }}>
-              <Card
-                sx={{
-                  borderRadius: 2.5,
-                  background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
-                  backdropFilter: "blur(20px)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <CardContent
+          <Grid container spacing={1} sx={{ mt: 1.5 }}>
+            {[
+              {
+                label: "المصروفات",
+                value: formatCurrency(summary.totalExpenses),
+                icon: <TrendingDown sx={{ fontSize: 18, color: 'white' }} />,
+                gradient: 'linear-gradient(135deg, rgba(214, 69, 69, 0.28) 0%, rgba(214, 69, 69, 0.12) 100%)',
+                borderColor: 'rgba(214, 69, 69, 0.35)',
+                iconBg: 'rgba(214, 69, 69, 0.35)',
+              },
+              {
+                label: "المدفوع",
+                value: formatCurrency(summary.totalPaid),
+                icon: <Payment sx={{ fontSize: 18, color: 'white' }} />,
+                gradient: 'linear-gradient(135deg, rgba(13, 150, 104, 0.28) 0%, rgba(13, 150, 104, 0.12) 100%)',
+                borderColor: 'rgba(13, 150, 104, 0.35)',
+                iconBg: 'rgba(13, 150, 104, 0.35)',
+              },
+              {
+                label: "المتبقي",
+                value: formatCurrency(summary.remaining),
+                icon: summary.remaining >= 0
+                  ? <TrendingUp sx={{ fontSize: 18, color: 'white' }} />
+                  : <TrendingDown sx={{ fontSize: 18, color: 'white' }} />,
+                gradient: summary.remaining >= 0
+                  ? 'linear-gradient(135deg, rgba(201, 165, 78, 0.28) 0%, rgba(201, 165, 78, 0.12) 100%)'
+                  : 'linear-gradient(135deg, rgba(214, 69, 69, 0.32) 0%, rgba(214, 69, 69, 0.15) 100%)',
+                borderColor: summary.remaining >= 0
+                  ? 'rgba(201, 165, 78, 0.4)'
+                  : 'rgba(214, 69, 69, 0.4)',
+                iconBg: summary.remaining >= 0
+                  ? 'rgba(201, 165, 78, 0.35)'
+                  : 'rgba(214, 69, 69, 0.35)',
+              },
+              {
+                label: "نسبة الربح",
+                value: summary.profitPercentage > 0 ? `${summary.profitPercentage}%` : "غير محدد",
+                subtitle: summary.profit > 0 ? formatCurrency(summary.profit) : undefined,
+                icon: <TrendingUp sx={{ fontSize: 18, color: 'white' }} />,
+                gradient: 'linear-gradient(135deg, rgba(90, 143, 196, 0.28) 0%, rgba(90, 143, 196, 0.12) 100%)',
+                borderColor: 'rgba(90, 143, 196, 0.4)',
+                iconBg: 'rgba(90, 143, 196, 0.35)',
+              },
+            ].map((card, idx) => (
+              <Grid size={{ xs: 6 }} key={idx}>
+                <Card
                   sx={{
-                    p: 1.5,
-                    textAlign: "center",
-                    "&:last-child": { pb: 1.5 },
+                    borderRadius: 2.5,
+                    background: card.gradient,
+                    backdropFilter: 'blur(20px)',
+                    color: 'white',
+                    border: `1px solid ${card.borderColor}`,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease',
+                    height: '100%',
                   }}
                 >
-                  <Box
+                  <CardContent
                     sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 2,
-                      bgcolor: "rgba(255,255,255,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mx: "auto",
-                      mb: 0.75,
+                      p: '14px 16px !important',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      height: '100%',
                     }}
                   >
-                    <TrendingDown sx={{ fontSize: 18, color: "white" }} />
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      opacity: 0.95,
-                      display: "block",
-                      fontSize: "0.65rem",
-                      fontWeight: 600,
-                      mb: 0.25,
-                    }}
-                  >
-                    المصروفات + النسبة
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight={800}
-                    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-                  >
-                    {formatCurrency(summary.totalExpenses + summary.profit)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Card
-                sx={{
-                  borderRadius: 2.5,
-                  background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
-                  backdropFilter: "blur(20px)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <CardContent
-                  sx={{
-                    p: 1.5,
-                    textAlign: "center",
-                    "&:last-child": { pb: 1.5 },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 2,
-                      bgcolor: "rgba(255,255,255,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mx: "auto",
-                      mb: 0.75,
-                    }}
-                  >
-                    <Payment sx={{ fontSize: 18, color: "white" }} />
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      opacity: 0.95,
-                      display: "block",
-                      fontSize: "0.65rem",
-                      fontWeight: 600,
-                      mb: 0.25,
-                    }}
-                  >
-                    المدفوع
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight={800}
-                    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-                  >
-                    {formatCurrency(summary.totalPaid)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Card
-                sx={{
-                  borderRadius: 2.5,
-                  background:
-                    summary.remaining >= 0
-                      ? "linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%)"
-                      : "linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.2) 100%)",
-                  backdropFilter: "blur(20px)",
-                  color: "white",
-                  border:
-                    summary.remaining >= 0
-                      ? "1px solid rgba(16, 185, 129, 0.4)"
-                      : "1px solid rgba(239, 68, 68, 0.4)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <CardContent
-                  sx={{
-                    p: 1.5,
-                    textAlign: "center",
-                    "&:last-child": { pb: 1.5 },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 2,
-                      bgcolor:
-                        summary.remaining >= 0
-                          ? "rgba(16, 185, 129, 0.3)"
-                          : "rgba(239, 68, 68, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mx: "auto",
-                      mb: 0.75,
-                    }}
-                  >
-                    {summary.remaining >= 0 ? (
-                      <TrendingUp sx={{ fontSize: 18, color: "white" }} />
-                    ) : (
-                      <TrendingDown sx={{ fontSize: 18, color: "white" }} />
-                    )}
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      opacity: 0.95,
-                      display: "block",
-                      fontSize: "0.65rem",
-                      fontWeight: 600,
-                      mb: 0.25,
-                    }}
-                  >
-                    المتبقي
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight={800}
-                    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-                  >
-                    {formatCurrency(summary.remaining)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Card
-                sx={{
-                  borderRadius: 2.5,
-                  background:
-                    "linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(124, 58, 237, 0.2) 100%)",
-                  backdropFilter: "blur(20px)",
-                  color: "white",
-                  border: "1px solid rgba(139, 92, 246, 0.4)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <CardContent
-                  sx={{
-                    p: 1.5,
-                    textAlign: "center",
-                    "&:last-child": { pb: 1.5 },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 2,
-                      bgcolor: "rgba(139, 92, 246, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mx: "auto",
-                      mb: 0.75,
-                    }}
-                  >
-                    <TrendingUp sx={{ fontSize: 18, color: "white" }} />
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      opacity: 0.95,
-                      display: "block",
-                      fontSize: "0.65rem",
-                      fontWeight: 600,
-                      mb: 0.25,
-                    }}
-                  >
-                    نسبة الربح
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight={800}
-                    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-                  >
-                    {summary.profitPercentage > 0
-                      ? `${summary.profitPercentage}%`
-                      : "غير محدد"}
-                  </Typography>
-                  {summary.profit > 0 && (
-                    <Typography
-                      variant="caption"
+                    <Box
                       sx={{
-                        opacity: 0.9,
-                        display: "block",
-                        fontSize: "0.6rem",
-                        mt: 0.25,
+                        width: 42,
+                        height: 42,
+                        borderRadius: 2,
+                        bgcolor: card.iconBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
                       }}
                     >
-                      {formatCurrency(summary.profit)}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
+                      {card.icon}
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          opacity: 0.9,
+                          display: 'block',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          lineHeight: 1.3,
+                          mb: 0.3,
+                        }}
+                      >
+                        {card.label}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        fontWeight={800}
+                        sx={{
+                          fontSize: { xs: '0.88rem', sm: '0.95rem' },
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {card.value}
+                      </Typography>
+                      {card.subtitle && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            opacity: 0.8,
+                            display: 'block',
+                            fontSize: '0.58rem',
+                            lineHeight: 1.2,
+                            mt: 0.15,
+                          }}
+                        >
+                          {card.subtitle}
+                        </Typography>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
         </Container>
       </Box>
 
       {/* Content */}
-      <Container maxWidth="sm" sx={{ mt: -2 }}>
+      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
         {/* Menu Section */}
         <Typography
           variant="h6"
@@ -1412,7 +1325,7 @@ export const ClientProfilePage = () => {
         fullScreen
         sx={{
           "& .MuiDialog-paper": {
-            bgcolor: theme.palette.mode === "dark" ? "#0f172a" : "#f8fafc",
+            bgcolor: theme.palette.mode === "dark" ? "#0c1524" : "#f4f6f9",
           },
         }}
       >
@@ -1420,10 +1333,19 @@ export const ClientProfilePage = () => {
           sx={{
             background:
               theme.palette.mode === "light"
-                ? "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)"
-                : "linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)",
+                ? "linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)"
+                : "linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)",
             color: "white",
             p: 2,
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+              pointerEvents: 'none',
+            },
           }}
         >
           <Stack
@@ -1432,10 +1354,10 @@ export const ClientProfilePage = () => {
             justifyContent="space-between"
             spacing={2}
           >
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
               <IconButton
                 onClick={() => setExpensesListDialogOpen(false)}
-                sx={{ color: "white" }}
+                sx={{ color: "white", mr: 0.5 }}
               >
                 <ArrowBack />
               </IconButton>
@@ -1457,11 +1379,13 @@ export const ClientProfilePage = () => {
                 setExpenseDialogOpen(true);
               }}
               sx={{
-                bgcolor: "white",
-                color: "primary.main",
+                bgcolor: 'rgba(201, 165, 78, 0.15)',
+                color: '#c9a54e',
                 fontWeight: 700,
-                "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
-                borderRadius: 2,
+                border: '1px solid rgba(201, 165, 78, 0.3)',
+                "&:hover": { bgcolor: 'rgba(201, 165, 78, 0.25)' },
+                borderRadius: 2.5,
+                boxShadow: 'none',
               }}
               startIcon={<Add />}
             >
@@ -1479,9 +1403,12 @@ export const ClientProfilePage = () => {
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
-                bgcolor: "background.paper",
-                borderRadius: 2,
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
+                borderRadius: 2.5,
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(90, 143, 196, 0.1)' : '1px solid rgba(26, 58, 92, 0.08)',
                 "& fieldset": { border: "none" },
+                transition: 'all 0.2s ease',
+                '&:hover': { borderColor: 'rgba(201, 165, 78, 0.3)' },
               },
             }}
             InputProps={{
@@ -1496,7 +1423,7 @@ export const ClientProfilePage = () => {
 
         <Box sx={{ flex: 1, overflowY: "auto", pb: 2 }}>
           {filteredExpenses.length === 0 ? (
-            <Container maxWidth="sm" sx={{ mt: -2 }}>
+            <Container maxWidth="sm" sx={{ mt: 1 }}>
               <Card
                 sx={{
                   borderRadius: 2.5,
@@ -1544,16 +1471,24 @@ export const ClientProfilePage = () => {
                   <Card
                     key={expense.id}
                     sx={{
-                      borderRadius: 2.5,
+                      borderRadius: 3,
                       boxShadow:
                         theme.palette.mode === "light"
-                          ? "0 2px 8px rgba(0,0,0,0.06)"
-                          : "0 2px 8px rgba(0,0,0,0.3)",
+                          ? "0 2px 12px rgba(26, 58, 92, 0.06)"
+                          : "0 2px 12px rgba(0,0,0,0.3)",
                       bgcolor: "background.paper",
                       border:
                         theme.palette.mode === "dark"
-                          ? "1px solid rgba(255,255,255,0.1)"
-                          : "none",
+                          ? "1px solid rgba(90, 143, 196, 0.08)"
+                          : "1px solid rgba(26, 58, 92, 0.04)",
+                      borderRight: '3px solid #d64545',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        boxShadow: theme.palette.mode === "light"
+                          ? "0 6px 20px rgba(26, 58, 92, 0.1)"
+                          : "0 6px 20px rgba(0,0,0,0.4)",
+                        transform: 'translateY(-1px)',
+                      },
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -1568,34 +1503,40 @@ export const ClientProfilePage = () => {
                       >
                         <Avatar
                           sx={{
-                            bgcolor: "error.light",
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(214, 69, 69, 0.12)' : 'rgba(214, 69, 69, 0.08)',
                             width: 48,
                             height: 48,
                             flexShrink: 0,
                             marginLeft: "24px",
+                            border: '1px solid rgba(214, 69, 69, 0.15)',
                           }}
                         >
                           <TrendingDown
-                            sx={{ color: "error.main", fontSize: 20 }}
+                            sx={{ color: "#d64545", fontSize: 20 }}
                           />
                         </Avatar>
 
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                           <Stack
                             direction="row"
-                            spacing={2}
+                            spacing={1.5}
                             alignItems="center"
-                            sx={{ mb: 1 }}
+                            sx={{ mb: 0.75 }}
                           >
-                            <Typography variant="body2" fontWeight={700} noWrap>
+                            <Typography variant="body2" fontWeight={700} noWrap sx={{ letterSpacing: 0.2 }}>
                               {expense.description}
                             </Typography>
                             <Chip
                               label={expense.category}
                               size="small"
-                              color="error"
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: "0.65rem" }}
+                              sx={{ 
+                                height: 22, 
+                                fontSize: "0.65rem",
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(214, 69, 69, 0.1)' : 'rgba(214, 69, 69, 0.06)',
+                                color: '#d64545',
+                                border: '1px solid rgba(214, 69, 69, 0.15)',
+                                fontWeight: 600,
+                              }}
                             />
                           </Stack>
 
@@ -1603,7 +1544,7 @@ export const ClientProfilePage = () => {
                             variant="caption"
                             color="text.secondary"
                             display="block"
-                            sx={{ mb: 1 }}
+                            sx={{ mb: 0.75, fontSize: '0.72rem' }}
                           >
                             {dayjs(expense.date).format("DD/MM/YYYY")}
                           </Typography>
@@ -1620,10 +1561,11 @@ export const ClientProfilePage = () => {
                                 py: 0.5,
                                 bgcolor:
                                   theme.palette.mode === "dark"
-                                    ? "rgba(255,255,255,0.05)"
-                                    : "rgba(0,0,0,0.03)",
-                                borderRadius: 1,
-                                borderRight: `2px solid ${theme.palette.primary.main}`,
+                                    ? "rgba(255,255,255,0.03)"
+                                    : "rgba(26, 58, 92, 0.02)",
+                                borderRadius: 1.5,
+                                borderRight: '2px solid rgba(201, 165, 78, 0.4)',
+                                fontSize: '0.78rem',
                               }}
                             >
                               💬 {expense.notes}
@@ -1633,7 +1575,7 @@ export const ClientProfilePage = () => {
                           <Typography
                             variant="h6"
                             fontWeight={800}
-                            color="error.main"
+                            sx={{ color: '#d64545', letterSpacing: 0.3 }}
                           >
                             {formatCurrency(expense.amount)}
                           </Typography>
@@ -1641,7 +1583,7 @@ export const ClientProfilePage = () => {
 
                         <Stack
                           direction="row"
-                          spacing={2}
+                          spacing={1}
                           sx={{ marginLeft: "8px" }}
                         >
                           <IconButton
@@ -1653,14 +1595,16 @@ export const ClientProfilePage = () => {
                               setExpensesListDialogOpen(false);
                             }}
                             sx={{
-                              bgcolor: "primary.main",
-                              color: "white",
-                              width: 32,
-                              height: 32,
-                              "&:hover": { bgcolor: "primary.dark" },
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.12)' : 'rgba(26, 58, 92, 0.06)',
+                              color: '#1a3a5c',
+                              width: 34,
+                              height: 34,
+                              border: '1px solid rgba(26, 58, 92, 0.1)',
+                              transition: 'all 0.15s ease',
+                              "&:hover": { bgcolor: 'rgba(26, 58, 92, 0.12)', transform: 'scale(1.05)' },
                             }}
                           >
-                            <Edit sx={{ fontSize: 16 }} />
+                            <Edit sx={{ fontSize: 15 }} />
                           </IconButton>
                           <IconButton
                             size="small"
@@ -1670,14 +1614,16 @@ export const ClientProfilePage = () => {
                               handleDeleteExpense(expense.id);
                             }}
                             sx={{
-                              bgcolor: "error.main",
-                              color: "white",
-                              width: 32,
-                              height: 32,
-                              "&:hover": { bgcolor: "error.dark" },
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(214, 69, 69, 0.12)' : 'rgba(214, 69, 69, 0.06)',
+                              color: '#d64545',
+                              width: 34,
+                              height: 34,
+                              border: '1px solid rgba(214, 69, 69, 0.1)',
+                              transition: 'all 0.15s ease',
+                              "&:hover": { bgcolor: 'rgba(214, 69, 69, 0.15)', transform: 'scale(1.05)' },
                             }}
                           >
-                            <Delete sx={{ fontSize: 16 }} />
+                            <Delete sx={{ fontSize: 15 }} />
                           </IconButton>
                         </Stack>
                       </Stack>
@@ -1688,16 +1634,12 @@ export const ClientProfilePage = () => {
                 {/* Total Summary */}
                 <Card
                   sx={{
-                    borderRadius: 2.5,
-                    bgcolor: "background.paper",
-                    border:
-                      theme.palette.mode === "dark"
-                        ? "1px solid rgba(255,255,255,0.1)"
-                        : "1px solid rgba(0,0,0,0.12)",
-                    boxShadow:
-                      theme.palette.mode === "light"
-                        ? "0 2px 8px rgba(0,0,0,0.06)"
-                        : "0 2px 8px rgba(0,0,0,0.3)",
+                    borderRadius: 3,
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(26, 58, 92, 0.15)' : 'rgba(26, 58, 92, 0.03)',
+                    border: theme.palette.mode === 'dark'
+                      ? '1px solid rgba(90, 143, 196, 0.12)'
+                      : '1px solid rgba(26, 58, 92, 0.08)',
+                    boxShadow: '0 4px 16px rgba(26, 58, 92, 0.06)',
                     mt: 2,
                   }}
                 >
@@ -1708,53 +1650,24 @@ export const ClientProfilePage = () => {
                         justifyContent="space-between"
                         alignItems="center"
                       >
-                        <Typography variant="body1" color="text.secondary">
-                          إجمالي المصروفات
-                        </Typography>
-                        <Typography variant="body1" fontWeight={700}>
-                          {formatCurrency(summary.totalExpenses)}
-                        </Typography>
-                      </Stack>
-                      
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Typography variant="body1" color="text.secondary">
-                          نسبة الربح ({summary.profitPercentage}%)
-                        </Typography>
-                        <Typography variant="body1" fontWeight={700} color="warning.main">
-                          {formatCurrency(summary.profit)}
-                        </Typography>
-                      </Stack>
-
-                      <Divider sx={{ borderStyle: 'dashed' }} />
-
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
                         <Typography
                           variant="h6"
                           fontWeight={900}
                           color="text.primary"
                         >
-                          المجموع الكلي
+                          إجمالي المصروفات
                         </Typography>
                         <Typography
                           variant="h5"
                           fontWeight={900}
-                          color="error.main"
+                          sx={{ color: '#d64545' }}
                         >
-                          {formatCurrency(summary.totalExpenses + summary.profit)}
+                          {formatCurrency(summary.totalExpenses)}
                         </Typography>
                       </Stack>
                     </Stack>
                     <Button
                       variant="contained"
-                      color="primary"
                       fullWidth
                       startIcon={<PictureAsPdf />}
                       onClick={() => {
@@ -1775,82 +1688,138 @@ export const ClientProfilePage = () => {
                             <title>مصروفات ${client.name}</title>
                             <style>
                               * { margin: 0; padding: 0; box-sizing: border-box; }
-                              @page { size: A4; margin: 15mm; }
+                              @page { size: A4; margin: 12mm; }
                               body {
                                 font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
                                 line-height: 1.6;
-                                color: #333;
+                                color: #2d3748;
                                 background: white;
-                                padding: 20px;
+                                padding: 0;
                               }
                               .header {
+                                background: linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%);
+                                color: white;
+                                padding: 24px 30px;
                                 text-align: center;
-                                border-bottom: 3px solid #ef4444;
-                                padding-bottom: 15px;
-                                margin-bottom: 20px;
+                                position: relative;
+                              }
+                              .header::after {
+                                content: '';
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                height: 3px;
+                                background: linear-gradient(90deg, #c9a54e 0%, rgba(201,165,78,0.3) 100%);
                               }
                               .header h1 {
-                                font-size: 24px;
-                                font-weight: bold;
-                                color: #ef4444;
-                                margin-bottom: 5px;
+                                font-size: 22px;
+                                font-weight: 800;
+                                margin-bottom: 4px;
+                                letter-spacing: 0.5px;
+                              }
+                              .header .company {
+                                font-size: 13px;
+                                color: rgba(201, 165, 78, 0.9);
+                                font-weight: 600;
+                              }
+                              .header .date {
+                                font-size: 12px;
+                                opacity: 0.8;
+                                margin-top: 4px;
                               }
                               .client-info {
-                                background: #f5f5f5;
-                                padding: 15px;
-                                border-radius: 8px;
-                                margin-bottom: 20px;
+                                margin: 20px 30px;
+                                padding: 14px 18px;
+                                background: #f8f9fb;
+                                border-radius: 10px;
+                                border-right: 4px solid #c9a54e;
                               }
                               .client-info h3 {
-                                font-size: 16px;
-                                color: #333;
-                                margin-bottom: 8px;
+                                font-size: 15px;
+                                color: #1a3a5c;
+                                font-weight: 700;
+                                margin-bottom: 4px;
                               }
+                              .client-info p {
+                                font-size: 13px;
+                                color: #5a7a9a;
+                              }
+                              .content { padding: 0 30px 20px; }
                               table {
                                 width: 100%;
-                                border-collapse: collapse;
+                                border-collapse: separate;
+                                border-spacing: 0;
                                 margin-bottom: 20px;
                                 font-size: 12px;
+                                border-radius: 10px;
+                                overflow: hidden;
+                                border: 1px solid #e8ecf0;
                               }
-                              thead {
-                                background: #ef4444;
-                                color: white;
-                              }
-                              th, td {
-                                padding: 12px;
+                              thead { background: #1a3a5c; color: white; }
+                              th {
+                                padding: 12px 14px;
                                 text-align: right;
-                                border-bottom: 1px solid #ddd;
+                                font-weight: 700;
+                                font-size: 12px;
+                                letter-spacing: 0.3px;
                               }
-                              tbody tr:hover { background: #f9fafb; }
-                              .total {
-                                background: #fee2e2;
-                                padding: 15px;
-                                border-radius: 8px;
+                              td {
+                                padding: 11px 14px;
+                                text-align: right;
+                                border-bottom: 1px solid #f0f2f5;
+                              }
+                              tbody tr:nth-child(even) { background: #fafbfc; }
+                              tbody tr:last-child td { border-bottom: none; }
+                              .total-section {
+                                background: linear-gradient(135deg, #f8f6f0 0%, #faf8f2 100%);
+                                border: 1px solid rgba(201, 165, 78, 0.2);
+                                border-radius: 10px;
+                                padding: 18px;
+                              }
+                              .total-row {
+                                display: flex;
+                                justify-content: space-between;
+                                padding: 8px 0;
+                                font-size: 14px;
+                              }
+                              .total-row.main {
+                                border-top: 2px solid rgba(201, 165, 78, 0.3);
+                                margin-top: 8px;
+                                padding-top: 12px;
+                                font-size: 18px;
+                              }
+                              .total-row.main strong { color: #c44040; }
+                              .footer {
                                 text-align: center;
-                                border: 2px solid #ef4444;
-                              }
-                              .total h3 {
-                                font-size: 20px;
-                                font-weight: bold;
-                                color: #ef4444;
+                                margin-top: 24px;
+                                padding-top: 14px;
+                                border-top: 1px solid #e8ecf0;
+                                color: #8a9bb0;
+                                font-size: 11px;
                               }
                               @media print {
                                 body { padding: 0; }
+                                .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                               }
                             </style>
                           </head>
                           <body>
                             <div class="header">
+                              <div class="company">م. محمد سالم التركي - إنشاءات وتعهدات</div>
                               <h1>كشف المصروفات</h1>
-                              <p>${dayjs().format("DD MMMM YYYY")}</p>
+                              <div class="date">${dayjs().format("DD MMMM YYYY")}</div>
                             </div>
                             <div class="client-info">
                               <h3>العميل: ${client.name}</h3>
                               <p>📱 ${client.phone}</p>
                             </div>
+                            <div class="content">
                             <table>
                               <thead>
                                 <tr>
+                                  <th>#</th>
                                   <th>التاريخ</th>
                                   <th>الوصف</th>
                                   <th>الفئة</th>
@@ -1861,21 +1830,22 @@ export const ClientProfilePage = () => {
                               <tbody>
                                 ${clientExpenses
                                   .map(
-                                    (exp) => `
+                                    (exp, i) => `
                                   <tr>
+                                    <td style="color: #8a9bb0; font-size: 11px;">${i + 1}</td>
                                     <td>${dayjs(exp.date).format(
                                       "DD/MM/YYYY"
                                     )}</td>
-                                    <td>${exp.description}</td>
-                                    <td>${exp.category}</td>
-                                    <td><strong>${formatCurrency(
+                                    <td style="font-weight: 600;">${exp.description}</td>
+                                    <td><span style="background: rgba(26,58,92,0.06); padding: 2px 8px; border-radius: 4px; font-size: 11px;">${exp.category}</span></td>
+                                    <td><strong style="color: #1a3a5c;">${formatCurrency(
                                       exp.amount
                                     )}</strong></td>
-                                    <td style="color: #64748b; font-style: italic; font-size: 11px; max-width: 200px; word-wrap: break-word;">
+                                    <td style="color: #8a9bb0; font-style: italic; font-size: 11px; max-width: 180px; word-wrap: break-word;">
                                       ${
                                         exp.notes
-                                          ? `💬 ${exp.notes}`
-                                          : '<span style="color: #94a3b8;">-</span>'
+                                          ? exp.notes
+                                          : '<span style="color: #c4cdd6;">-</span>'
                                       }
                                     </td>
                                   </tr>
@@ -1884,19 +1854,13 @@ export const ClientProfilePage = () => {
                                   .join("")}
                               </tbody>
                             </table>
-                            <div class="total">
-                              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 10px;">
+                            <div class="total-section">
+                              <div class="total-row main">
                                 <span>إجمالي المصروفات:</span>
                                 <strong>${formatCurrency(summary.totalExpenses)}</strong>
                               </div>
-                              <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 10px;">
-                                <span>نسبة الربح (${summary.profitPercentage}%):</span>
-                                <strong>${formatCurrency(summary.profit)}</strong>
-                              </div>
-                              <div style="display: flex; justify-content: space-between; font-size: 18px; margin-top: 5px;">
-                                <span>المجموع الكلي:</span>
-                                <strong>${formatCurrency(summary.totalExpenses + summary.profit)}</strong>
-                              </div>
+                            </div>
+                            <div class="footer">تم إنشاء هذا الكشف بواسطة نظام إدارة الإنشاءات والفواتير</div>
                             </div>
                           </body>
                           </html>
@@ -1907,7 +1871,13 @@ export const ClientProfilePage = () => {
                           printWindow.print();
                         }, 250);
                       }}
-                      sx={{ borderRadius: 2, py: 1.5, fontWeight: 700 }}
+                      sx={{ 
+                        borderRadius: 2.5, 
+                        py: 1.5, 
+                        fontWeight: 700,
+                        bgcolor: '#1a3a5c',
+                        '&:hover': { bgcolor: '#0e2440' },
+                      }}
                     >
                       مشاركة كملف PDF
                     </Button>
@@ -1926,7 +1896,7 @@ export const ClientProfilePage = () => {
         fullScreen
         sx={{
           "& .MuiDialog-paper": {
-            bgcolor: theme.palette.mode === "dark" ? "#0f172a" : "#f8fafc",
+            bgcolor: theme.palette.mode === "dark" ? "#0c1524" : "#f4f6f9",
           },
         }}
       >
@@ -1934,10 +1904,19 @@ export const ClientProfilePage = () => {
           sx={{
             background:
               theme.palette.mode === "light"
-                ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
-                : "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
+                ? "linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)"
+                : "linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)",
             color: "white",
             p: 2,
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: 'radial-gradient(ellipse at 30% 20%, rgba(13, 150, 104, 0.08) 0%, transparent 50%)',
+              pointerEvents: 'none',
+            },
           }}
         >
           <Stack
@@ -1946,10 +1925,10 @@ export const ClientProfilePage = () => {
             justifyContent="space-between"
             spacing={2}
           >
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
               <IconButton
                 onClick={() => setPaymentsListDialogOpen(false)}
-                sx={{ color: "white" }}
+                sx={{ color: "rgba(255,255,255,0.9)", mr: 0.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
               >
                 <ArrowBack />
               </IconButton>
@@ -1971,11 +1950,13 @@ export const ClientProfilePage = () => {
                 setPaymentDialogOpen(true);
               }}
               sx={{
-                bgcolor: "white",
-                color: "success.main",
+                bgcolor: 'rgba(13, 150, 104, 0.15)',
+                color: '#0d9668',
                 fontWeight: 700,
-                "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
-                borderRadius: 2,
+                border: '1px solid rgba(13, 150, 104, 0.3)',
+                "&:hover": { bgcolor: 'rgba(13, 150, 104, 0.25)' },
+                borderRadius: 2.5,
+                boxShadow: 'none',
               }}
               startIcon={<Add />}
             >
@@ -1993,9 +1974,12 @@ export const ClientProfilePage = () => {
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
-                bgcolor: "background.paper",
-                borderRadius: 2,
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
+                borderRadius: 2.5,
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(90, 143, 196, 0.1)' : '1px solid rgba(26, 58, 92, 0.08)',
                 "& fieldset": { border: "none" },
+                transition: 'all 0.2s ease',
+                '&:hover': { borderColor: 'rgba(201, 165, 78, 0.3)' },
               },
             }}
             InputProps={{
@@ -2010,7 +1994,7 @@ export const ClientProfilePage = () => {
 
         <Box sx={{ flex: 1, overflowY: "auto", pb: 2 }}>
           {filteredPayments.length === 0 ? (
-            <Container maxWidth="sm" sx={{ mt: -2 }}>
+            <Container maxWidth="sm" sx={{ mt: 1 }}>
               <Card
                 sx={{
                   borderRadius: 2.5,
@@ -2059,16 +2043,24 @@ export const ClientProfilePage = () => {
                     key={payment.id}
                     onClick={(e) => e.stopPropagation()}
                     sx={{
-                      borderRadius: 2.5,
+                      borderRadius: 3,
                       boxShadow:
                         theme.palette.mode === "light"
-                          ? "0 2px 8px rgba(0,0,0,0.06)"
-                          : "0 2px 8px rgba(0,0,0,0.3)",
+                          ? "0 2px 12px rgba(26, 58, 92, 0.06)"
+                          : "0 2px 12px rgba(0,0,0,0.3)",
                       bgcolor: "background.paper",
                       border:
                         theme.palette.mode === "dark"
-                          ? "1px solid rgba(255,255,255,0.1)"
-                          : "none",
+                          ? "1px solid rgba(90, 143, 196, 0.08)"
+                          : "1px solid rgba(26, 58, 92, 0.04)",
+                      borderRight: '3px solid #0d9668',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        boxShadow: theme.palette.mode === "light"
+                          ? "0 6px 20px rgba(26, 58, 92, 0.1)"
+                          : "0 6px 20px rgba(0,0,0,0.4)",
+                        transform: 'translateY(-1px)',
+                      },
                     }}
                   >
                     <CardContent
@@ -2082,26 +2074,27 @@ export const ClientProfilePage = () => {
                       >
                         <Avatar
                           sx={{
-                            bgcolor: "success.light",
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(13, 150, 104, 0.12)' : 'rgba(13, 150, 104, 0.08)',
                             width: 48,
                             height: 48,
                             flexShrink: 0,
                             marginLeft: "24px",
+                            border: '1px solid rgba(13, 150, 104, 0.15)',
                           }}
                         >
                           <Payment
-                            sx={{ color: "success.main", fontSize: 20 }}
+                            sx={{ color: "#0d9668", fontSize: 20 }}
                           />
                         </Avatar>
 
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                           <Stack
                             direction="row"
-                            spacing={2}
+                            spacing={1.5}
                             alignItems="center"
-                            sx={{ mb: 1 }}
+                            sx={{ mb: 0.75 }}
                           >
-                            <Typography variant="body2" fontWeight={700} noWrap>
+                            <Typography variant="body2" fontWeight={700} noWrap sx={{ letterSpacing: 0.2 }}>
                               {getPaymentMethodLabel(payment.paymentMethod)}
                             </Typography>
                           </Stack>
@@ -2110,7 +2103,7 @@ export const ClientProfilePage = () => {
                             variant="caption"
                             color="text.secondary"
                             display="block"
-                            sx={{ mb: 1 }}
+                            sx={{ mb: 0.75, fontSize: '0.72rem' }}
                           >
                             {dayjs(payment.paymentDate).format("DD/MM/YYYY")}
                           </Typography>
@@ -2127,10 +2120,11 @@ export const ClientProfilePage = () => {
                                 py: 0.5,
                                 bgcolor:
                                   theme.palette.mode === "dark"
-                                    ? "rgba(255,255,255,0.05)"
-                                    : "rgba(0,0,0,0.03)",
-                                borderRadius: 1,
-                                borderRight: `2px solid ${theme.palette.success.main}`,
+                                    ? "rgba(255,255,255,0.03)"
+                                    : "rgba(26, 58, 92, 0.02)",
+                                borderRadius: 1.5,
+                                borderRight: '2px solid rgba(201, 165, 78, 0.4)',
+                                fontSize: '0.78rem',
                               }}
                             >
                               💬 {payment.notes}
@@ -2140,7 +2134,7 @@ export const ClientProfilePage = () => {
                           <Typography
                             variant="h6"
                             fontWeight={800}
-                            color="success.main"
+                            sx={{ color: '#0d9668', letterSpacing: 0.3 }}
                           >
                             {formatCurrency(payment.amount)}
                           </Typography>
@@ -2148,7 +2142,7 @@ export const ClientProfilePage = () => {
 
                         <Stack
                           direction="row"
-                          spacing={2}
+                          spacing={1}
                           sx={{ marginLeft: "8px" }}
                         >
                           <IconButton
@@ -2160,14 +2154,16 @@ export const ClientProfilePage = () => {
                               setPaymentsListDialogOpen(false);
                             }}
                             sx={{
-                              bgcolor: "primary.main",
-                              color: "white",
-                              width: 32,
-                              height: 32,
-                              "&:hover": { bgcolor: "primary.dark" },
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.12)' : 'rgba(26, 58, 92, 0.06)',
+                              color: '#1a3a5c',
+                              width: 34,
+                              height: 34,
+                              border: '1px solid rgba(26, 58, 92, 0.1)',
+                              transition: 'all 0.15s ease',
+                              "&:hover": { bgcolor: 'rgba(26, 58, 92, 0.12)', transform: 'scale(1.05)' },
                             }}
                           >
-                            <Edit sx={{ fontSize: 16 }} />
+                            <Edit sx={{ fontSize: 15 }} />
                           </IconButton>
                           <IconButton
                             size="small"
@@ -2177,14 +2173,16 @@ export const ClientProfilePage = () => {
                               handleDeletePayment(payment.id);
                             }}
                             sx={{
-                              bgcolor: "error.main",
-                              color: "white",
-                              width: 32,
-                              height: 32,
-                              "&:hover": { bgcolor: "error.dark" },
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(214, 69, 69, 0.12)' : 'rgba(214, 69, 69, 0.06)',
+                              color: '#d64545',
+                              width: 34,
+                              height: 34,
+                              border: '1px solid rgba(214, 69, 69, 0.1)',
+                              transition: 'all 0.15s ease',
+                              "&:hover": { bgcolor: 'rgba(214, 69, 69, 0.15)', transform: 'scale(1.05)' },
                             }}
                           >
-                            <Delete sx={{ fontSize: 16 }} />
+                            <Delete sx={{ fontSize: 15 }} />
                           </IconButton>
                         </Stack>
                       </Stack>
@@ -2195,46 +2193,72 @@ export const ClientProfilePage = () => {
                 {/* Total Summary */}
                 <Card
                   sx={{
-                    borderRadius: 2.5,
-                    bgcolor: "background.paper",
-                    border:
-                      theme.palette.mode === "dark"
-                        ? "1px solid rgba(255,255,255,0.1)"
-                        : "1px solid rgba(0,0,0,0.12)",
-                    boxShadow:
-                      theme.palette.mode === "light"
-                        ? "0 2px 8px rgba(0,0,0,0.06)"
-                        : "0 2px 8px rgba(0,0,0,0.3)",
+                    borderRadius: 3,
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(26, 58, 92, 0.15)' : 'rgba(26, 58, 92, 0.03)',
+                    border: theme.palette.mode === 'dark'
+                      ? '1px solid rgba(90, 143, 196, 0.12)'
+                      : '1px solid rgba(26, 58, 92, 0.08)',
+                    boxShadow: '0 4px 16px rgba(26, 58, 92, 0.06)',
                     mt: 2,
                   }}
                 >
                   <CardContent sx={{ p: 2.5 }}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 1.5 }}
-                    >
-                      <Typography
-                        variant="h6"
-                        fontWeight={900}
-                        color="text.primary"
+                    <Stack spacing={1.5} sx={{ mb: 2 }}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        المجموع الكلي
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        fontWeight={900}
-                        color="success.main"
+                        <Typography
+                          variant="h6"
+                          fontWeight={900}
+                          color="text.primary"
+                        >
+                          المجموع الكلي
+                        </Typography>
+                        <Typography
+                          variant="h5"
+                          fontWeight={900}
+                          sx={{ color: '#0d9668' }}
+                        >
+                          {formatCurrency(
+                            clientPayments.reduce((sum, p) => sum + p.amount, 0)
+                          )}
+                        </Typography>
+                      </Stack>
+
+                      <Divider sx={{ borderStyle: 'dashed', borderColor: 'rgba(201, 165, 78, 0.2)' }} />
+                      
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
                       >
-                        {formatCurrency(
-                          clientPayments.reduce((sum, p) => sum + p.amount, 0)
-                        )}
-                      </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          نسبة الربح ({summary.profitPercentage}%)
+                        </Typography>
+                        <Typography variant="body1" fontWeight={700} sx={{ color: '#c9a54e' }}>
+                          {formatCurrency(summary.profit)}
+                        </Typography>
+                      </Stack>
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          الباقي
+                        </Typography>
+                        <Typography variant="body1" fontWeight={700} sx={{ color: '#1a3a5c' }}>
+                          {formatCurrency(
+                            clientPayments.reduce((sum, p) => sum + p.amount, 0) - summary.profit
+                          )}
+                        </Typography>
+                      </Stack>
                     </Stack>
                     <Button
                       variant="contained"
-                      color="success"
                       fullWidth
                       startIcon={<PictureAsPdf />}
                       onClick={() => {
@@ -2255,80 +2279,142 @@ export const ClientProfilePage = () => {
                             <title>كشف المدفوعات</title>
                             <style>
                               * { margin: 0; padding: 0; box-sizing: border-box; }
+                              @page { size: A4; margin: 12mm; }
                               body {
-                                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                                padding: 20px;
+                                font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                padding: 0;
                                 background: #fff;
-                                color: #333;
+                                color: #2d3748;
                               }
                               .header {
+                                background: linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%);
+                                color: white;
+                                padding: 24px 30px;
                                 text-align: center;
-                                margin-bottom: 30px;
-                                padding-bottom: 20px;
-                                border-bottom: 2px solid #10b981;
+                                position: relative;
+                              }
+                              .header::after {
+                                content: '';
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                height: 3px;
+                                background: linear-gradient(90deg, #0d9668 0%, rgba(13,150,104,0.3) 100%);
                               }
                               .header h1 {
-                                font-size: 24px;
-                                color: #10b981;
-                                margin-bottom: 10px;
+                                font-size: 22px;
+                                font-weight: 800;
+                                margin-bottom: 4px;
+                                letter-spacing: 0.5px;
+                              }
+                              .header .company {
+                                font-size: 13px;
+                                color: rgba(201, 165, 78, 0.9);
+                                font-weight: 600;
+                              }
+                              .header .date {
+                                font-size: 12px;
+                                opacity: 0.8;
+                                margin-top: 4px;
                               }
                               .client-info {
-                                background: #f0fdf4;
-                                padding: 15px;
-                                border-radius: 8px;
-                                margin-bottom: 20px;
-                                border-right: 4px solid #10b981;
+                                margin: 20px 30px;
+                                padding: 14px 18px;
+                                background: #f8f9fb;
+                                border-radius: 10px;
+                                border-right: 4px solid #0d9668;
                               }
                               .client-info h3 {
-                                font-size: 16px;
-                                color: #333;
-                                margin-bottom: 8px;
+                                font-size: 15px;
+                                color: #1a3a5c;
+                                font-weight: 700;
+                                margin-bottom: 4px;
                               }
+                              .client-info p {
+                                font-size: 13px;
+                                color: #5a7a9a;
+                              }
+                              .content { padding: 0 30px 20px; }
                               table {
                                 width: 100%;
-                                border-collapse: collapse;
+                                border-collapse: separate;
+                                border-spacing: 0;
                                 margin-bottom: 20px;
                                 font-size: 12px;
+                                border-radius: 10px;
+                                overflow: hidden;
+                                border: 1px solid #e8ecf0;
                               }
-                              thead {
-                                background: #10b981;
-                                color: white;
-                              }
-                              th, td {
-                                padding: 12px;
+                              thead { background: #1a3a5c; color: white; }
+                              th {
+                                padding: 12px 14px;
                                 text-align: right;
-                                border-bottom: 1px solid #ddd;
+                                font-weight: 700;
+                                font-size: 12px;
+                                letter-spacing: 0.3px;
                               }
-                              tbody tr:hover { background: #f9fafb; }
-                              .total {
-                                background: #d1fae5;
-                                padding: 15px;
-                                border-radius: 8px;
-                                text-align: center;
-                                border: 2px solid #10b981;
+                              td {
+                                padding: 11px 14px;
+                                text-align: right;
+                                border-bottom: 1px solid #f0f2f5;
                               }
-                              .total h3 {
+                              tbody tr:nth-child(even) { background: #fafbfc; }
+                              tbody tr:last-child td { border-bottom: none; }
+                              .total-section {
+                                background: linear-gradient(135deg, #f0faf5 0%, #f5fbf8 100%);
+                                border: 1px solid rgba(13, 150, 104, 0.15);
+                                border-radius: 10px;
+                                padding: 18px;
+                              }
+                              .total-section h3 {
                                 font-size: 20px;
-                                font-weight: bold;
-                                color: #059669;
+                                font-weight: 800;
+                                color: #0d9668;
+                              }
+                              .total-row {
+                                display: flex;
+                                justify-content: space-between;
+                                padding: 8px 0;
+                                font-size: 14px;
+                              }
+                              .total-row.main {
+                                border-top: 2px solid rgba(13, 150, 104, 0.2);
+                                margin-top: 8px;
+                                padding-top: 12px;
+                                font-size: 18px;
+                              }
+                              .total-row.main strong { color: #0d9668; }
+                              .footer {
+                                text-align: center;
+                                margin-top: 24px;
+                                padding-top: 14px;
+                                border-top: 1px solid #e8ecf0;
+                                color: #8a9bb0;
+                                font-size: 11px;
                               }
                               @media print {
                                 body { padding: 0; }
+                                .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                               }
                             </style>
                           </head>
                           <body>
                             <div class="header">
+                              <div class="company">م. محمد سالم التركي - إنشاءات وتعهدات</div>
                               <h1>كشف المدفوعات</h1>
-                              <p>${dayjs().format("DD MMMM YYYY")}</p>
+                              <div class="date">${dayjs().format("DD MMMM YYYY")}</div>
                             </div>
                             <div class="client-info">
                               <h3>العميل: ${client.name}</h3>
                               <p>📱 ${client.phone}</p>
                             </div>
+                            <div class="content">
                             <table>
                               <thead>
                                 <tr>
+                                  <th>#</th>
                                   <th>التاريخ</th>
                                   <th>طريقة الدفع</th>
                                   <th>المبلغ</th>
@@ -2338,22 +2424,23 @@ export const ClientProfilePage = () => {
                               <tbody>
                                 ${clientPayments
                                   .map(
-                                    (payment) => `
+                                    (payment, i) => `
                                   <tr>
+                                    <td style="color: #8a9bb0; font-size: 11px;">${i + 1}</td>
                                     <td>${dayjs(payment.paymentDate).format(
                                       "DD/MM/YYYY"
                                     )}</td>
-                                    <td>${getPaymentMethodLabel(
+                                    <td style="font-weight: 600;">${getPaymentMethodLabel(
                                       payment.paymentMethod
                                     )}</td>
-                                    <td><strong>${formatCurrency(
+                                    <td><strong style="color: #0d9668;">${formatCurrency(
                                       payment.amount
                                     )}</strong></td>
-                                    <td style="color: #64748b; font-style: italic; font-size: 11px; max-width: 200px; word-wrap: break-word;">
+                                    <td style="color: #8a9bb0; font-style: italic; font-size: 11px; max-width: 180px; word-wrap: break-word;">
                                       ${
                                         payment.notes
-                                          ? `💬 ${payment.notes}`
-                                          : '<span style="color: #94a3b8;">-</span>'
+                                          ? payment.notes
+                                          : '<span style="color: #c4cdd6;">-</span>'
                                       }
                                     </td>
                                   </tr>
@@ -2362,10 +2449,21 @@ export const ClientProfilePage = () => {
                                   .join("")}
                               </tbody>
                             </table>
-                            <div class="total">
-                              <h3>المجموع الكلي: ${formatCurrency(
-                                totalPayments
-                              )}</h3>
+                            <div class="total-section">
+                              <div class="total-row main">
+                                <span>المجموع الكلي:</span>
+                                <strong>${formatCurrency(totalPayments)}</strong>
+                              </div>
+                              <div class="total-row">
+                                <span>نسبة الربح (${summary.profitPercentage}%):</span>
+                                <strong style="color: #c9a54e;">${formatCurrency(summary.profit)}</strong>
+                              </div>
+                              <div class="total-row">
+                                <span>الباقي:</span>
+                                <strong style="color: #1a3a5c;">${formatCurrency(totalPayments - summary.profit)}</strong>
+                              </div>
+                            </div>
+                            <div class="footer">تم إنشاء هذا الكشف بواسطة نظام إدارة الإنشاءات والفواتير</div>
                             </div>
                           </body>
                           </html>
@@ -2376,7 +2474,13 @@ export const ClientProfilePage = () => {
                           printWindow.print();
                         }, 250);
                       }}
-                      sx={{ borderRadius: 2, py: 1.5, fontWeight: 700 }}
+                      sx={{ 
+                        borderRadius: 2.5, 
+                        py: 1.5, 
+                        fontWeight: 700,
+                        bgcolor: '#1a3a5c',
+                        '&:hover': { bgcolor: '#0e2440' },
+                      }}
                     >
                       مشاركة كملف PDF
                     </Button>
@@ -4301,24 +4405,39 @@ export const ClientProfilePage = () => {
               />
             </Stack>
 
-            <Stack direction="row" spacing={2} sx={{ mt: 5 }}>
+
+
+            <Stack spacing={2} sx={{ mt: 4 }}>
               <Button
-                onClick={() => setEditClientDialogOpen(false)}
+                variant="outlined"
+                color="error"
                 fullWidth
                 size="large"
+                startIcon={<Delete />}
+                onClick={handleDeleteClient}
                 sx={{ borderRadius: 2, py: 1.5 }}
               >
-                إلغاء
+                حذف العميل
               </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
-              >
-                حفظ التعديلات
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button
+                  onClick={() => setEditClientDialogOpen(false)}
+                  fullWidth
+                  size="large"
+                  sx={{ borderRadius: 2, py: 1.5 }}
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  sx={{ borderRadius: 2, py: 1.5 }}
+                >
+                  حفظ التعديلات
+                </Button>
+              </Stack>
             </Stack>
           </Box>
         </form>

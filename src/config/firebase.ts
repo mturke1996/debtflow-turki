@@ -2,22 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase configuration
-// يمكنك إنشاء ملف .env في جذر المشروع وإضافة القيم التالية:
-// VITE_FIREBASE_API_KEY=your-api-key
-// VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
-// VITE_FIREBASE_PROJECT_ID=your-project-id
-// VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-// VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-// VITE_FIREBASE_APP_ID=your-app-id
-
+// Firebase configuration - م. محمد سالم التركي
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCcnwb1V0NhW-tOZRQOTiMn9sMuW1CBWh4",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "test-company-a0c68.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "test-company-a0c68",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "test-company-a0c68.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "426636793558",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:426636793558:web:28855be21b4f8a179f9b77"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD1iM0be62FUI6CQKj-O_60wh_9QGrOu1E",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mohturki-b8344.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mohturki-b8344",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mohturki-b8344.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "333833076051",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:333833076051:web:7684cd69bbfb362f45b5a6",
+  measurementId: "G-93QJJCNR2K"
 };
 
 // Initialize Firebase
@@ -28,4 +21,3 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 export default app;
-

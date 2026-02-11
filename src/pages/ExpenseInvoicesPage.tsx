@@ -44,12 +44,12 @@ dayjs.locale('ar');
 
 export const ExpenseInvoicesPage = () => {
   const navigate = useNavigate();
-  const { expenseInvoices, clients, getExpenseInvoices } = useDataStore();
+  const { expenseInvoices, clients, payments, getExpenseInvoices } = useDataStore();
   const [selectedInvoice, setSelectedInvoice] = useState<ExpenseInvoice | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   const handleShareTotal = () => {
-    generateExpenseInvoicesSummaryPDF(expenseInvoices, clients);
+    generateExpenseInvoicesSummaryPDF(expenseInvoices, clients, payments);
   };
 
   const invoicesWithClient = useMemo(() => {

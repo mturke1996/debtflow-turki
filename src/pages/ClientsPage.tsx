@@ -4,16 +4,12 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   Typography,
   TextField,
   InputAdornment,
   Chip,
   IconButton,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
   InputLabel,
   Select,
@@ -22,7 +18,6 @@ import {
   Avatar,
   Stack,
   useTheme,
-  alpha,
 } from '@mui/material';
 import {
   Add,
@@ -40,8 +35,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Client } from '@/types';
-import { formatCurrency } from '@/utils/calculations';
-import { AccountBalance, Phone, Email, LocationOn } from '@mui/icons-material';
+import { Phone } from '@mui/icons-material';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
@@ -149,7 +143,9 @@ export const ClientsPage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+        background: theme.palette.mode === 'dark' 
+          ? 'linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)' 
+          : 'linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)',
         pb: 3,
       }}
     >
@@ -157,38 +153,52 @@ export const ClientsPage = () => {
       <Box
         sx={{
           background: theme.palette.mode === 'light' 
-            ? 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)'
-            : 'linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)',
+            ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
+            : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
           pt: 3,
           pb: 4,
           px: 2,
-          borderRadius: '0 0 32px 32px',
-          boxShadow: '0 8px 32px rgba(25, 118, 210, 0.25)',
+          borderRadius: '0 0 28px 28px',
+          boxShadow: theme.palette.mode === 'light' 
+            ? '0 8px 32px -8px rgba(26, 58, 92, 0.3)'
+            : '0 8px 32px -8px rgba(0, 0, 0, 0.4)',
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+          },
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <IconButton onClick={() => navigate('/')} sx={{ color: 'white', marginLeft: '8px' }}>
+            <IconButton onClick={() => navigate('/')} sx={{ color: 'rgba(255,255,255,0.9)', marginLeft: '8px', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
               <ArrowBack />
             </IconButton>
-            <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1 }}>
+            <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1, letterSpacing: 0.3 }}>
               العملاء ({clients.length})
             </Typography>
             <Button
               variant="contained"
               onClick={() => handleOpenDialog()}
               sx={{
-                bgcolor: 'white',
-                color: 'primary.main',
+                bgcolor: 'rgba(201, 165, 78, 0.9)',
+                color: '#1a2a3e',
                 fontWeight: 700,
                 '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.95)',
-                  transform: 'scale(1.05)',
+                  bgcolor: '#c9a54e',
+                  transform: 'scale(1.04)',
                 },
                 borderRadius: 2.5,
                 px: 2.5,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                transition: 'all 0.2s',
+                boxShadow: '0 4px 14px -3px rgba(201, 165, 78, 0.4)',
+                transition: 'all 0.25s ease',
               }}
               startIcon={<Add />}
             >
@@ -204,17 +214,21 @@ export const ClientsPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             sx={{
               mt: 2.5,
+              mb: 1,
               '& .MuiOutlinedInput-root': {
-                bgcolor: 'white',
+                bgcolor: 'rgba(255,255,255,0.95)',
                 borderRadius: 3,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
                 '& fieldset': { border: 'none' },
+                '&:hover': {
+                  bgcolor: 'white',
+                },
               },
             }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: 'text.secondary' }} />
+                  <Search sx={{ color: 'text.secondary', opacity: 0.6 }} />
                 </InputAdornment>
               ),
             }}
@@ -223,20 +237,25 @@ export const ClientsPage = () => {
       </Box>
 
       {/* Clients List */}
-      <Container maxWidth="sm" sx={{ mt: -2 }}>
-        <Stack spacing={3.5}>
+      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
+        <Stack spacing={2}>
           {filteredClients.length === 0 ? (
-            <Card sx={{ borderRadius: 2.5, textAlign: 'center', py: 6, bgcolor: 'background.paper' }}>
-              <People sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.3, mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+            <Card sx={{ borderRadius: 3, textAlign: 'center', py: 6, bgcolor: 'background.paper' }}>
+              <People sx={{ fontSize: 56, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
                 لا يوجد عملاء
               </Typography>
               <Button
                 variant="contained"
-                color="primary"
                 startIcon={<Add />}
                 onClick={() => handleOpenDialog()}
-                sx={{ mt: 2, borderRadius: 2 }}
+                sx={{ 
+                  mt: 2, 
+                  borderRadius: 2.5,
+                  bgcolor: '#1a3a5c',
+                  '&:hover': { bgcolor: '#0e2440' },
+                  boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
+                }}
               >
                 إضافة أول عميل
               </Button>
@@ -250,40 +269,44 @@ export const ClientsPage = () => {
                   sx={{
                     borderRadius: 3,
                     boxShadow: theme.palette.mode === 'light'
-                      ? '0 4px 20px rgba(0,0,0,0.08)'
-                      : '0 4px 20px rgba(0,0,0,0.4)',
+                      ? '0 2px 12px -2px rgba(26, 58, 92, 0.07)'
+                      : '0 4px 20px rgba(0,0,0,0.35)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                     bgcolor: 'background.paper',
-                    border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                    border: theme.palette.mode === 'dark' ? '1px solid rgba(90, 143, 196, 0.08)' : '1px solid rgba(26, 58, 92, 0.04)',
                     '&:hover': {
                       boxShadow: theme.palette.mode === 'light'
-                        ? '0 12px 40px rgba(0,0,0,0.15)'
-                        : '0 12px 40px rgba(0,0,0,0.5)',
-                      transform: 'translateY(-4px) scale(1.01)',
+                        ? '0 10px 32px -6px rgba(26, 58, 92, 0.12)'
+                        : '0 12px 40px rgba(0,0,0,0.45)',
+                      transform: 'translateY(-3px)',
                     },
                     '&:active': {
                       transform: 'scale(0.98)',
                     },
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
+                  <CardContent sx={{ p: 2.5 }}>
                     <Stack direction="row" alignItems="center" spacing={0}>
                       {/* Avatar */}
                       <Avatar
                         sx={{
-                          width: 52,
-                          height: 52,
-                          bgcolor: client.type === 'company' ? 'primary.light' : 'secondary.light',
+                          width: 50,
+                          height: 50,
+                          bgcolor: client.type === 'company' 
+                            ? (theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.15)' : 'rgba(26, 58, 92, 0.08)')
+                            : (theme.palette.mode === 'dark' ? 'rgba(201, 165, 78, 0.15)' : 'rgba(201, 165, 78, 0.1)'),
                           flexShrink: 0,
-                          marginLeft: '24px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          marginLeft: '20px',
+                          border: client.type === 'company' 
+                            ? '1.5px solid rgba(90, 143, 196, 0.2)'
+                            : '1.5px solid rgba(201, 165, 78, 0.2)',
                         }}
                       >
                         {client.type === 'company' ? (
-                          <Business sx={{ color: 'primary.main', fontSize: 20 }} />
+                          <Business sx={{ color: theme.palette.mode === 'dark' ? '#5a8fc4' : '#1a3a5c', fontSize: 22 }} />
                         ) : (
-                          <Person sx={{ color: 'secondary.main', fontSize: 20 }} />
+                          <Person sx={{ color: '#c9a54e', fontSize: 22 }} />
                         )}
                       </Avatar>
 
@@ -291,16 +314,17 @@ export const ClientsPage = () => {
                       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                         <Stack 
                           direction={{ xs: 'column', sm: 'row' }} 
-                          spacing={{ xs: 1, sm: 2 }} 
+                          spacing={{ xs: 0.5, sm: 1.5 }} 
                           alignItems={{ xs: 'flex-start', sm: 'center' }}
-                          sx={{ mb: 1.5 }}
+                          sx={{ mb: 1 }}
                         >
                           <Typography 
                             variant="h6" 
-                            fontWeight={800}
+                            fontWeight={700}
                             sx={{
-                              fontSize: { xs: '1rem', sm: '1.25rem' },
+                              fontSize: { xs: '0.95rem', sm: '1.15rem' },
                               wordBreak: 'break-word',
+                              letterSpacing: 0.2,
                             }}
                           >
                             {client.name}
@@ -308,9 +332,19 @@ export const ClientsPage = () => {
                           <Chip
                             label={client.type === 'company' ? 'شركة' : 'فرد'}
                             size="small"
-                            color={client.type === 'company' ? 'primary' : 'secondary'}
-                            variant="outlined"
-                            sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}
+                            sx={{ 
+                              height: 22, 
+                              fontSize: '0.7rem', 
+                              fontWeight: 700, 
+                              flexShrink: 0,
+                              bgcolor: client.type === 'company' 
+                                ? (theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.15)' : 'rgba(26, 58, 92, 0.08)')
+                                : (theme.palette.mode === 'dark' ? 'rgba(201, 165, 78, 0.15)' : 'rgba(201, 165, 78, 0.1)'),
+                              color: client.type === 'company'
+                                ? (theme.palette.mode === 'dark' ? '#5a8fc4' : '#1a3a5c')
+                                : '#c9a54e',
+                              border: 'none',
+                            }}
                           />
                         </Stack>
                         
@@ -320,21 +354,21 @@ export const ClientsPage = () => {
                           alignItems="center"
                           sx={{
                             bgcolor: theme.palette.mode === 'dark' 
-                              ? 'rgba(255,255,255,0.05)' 
-                              : 'rgba(0,0,0,0.03)',
+                              ? 'rgba(255,255,255,0.04)' 
+                              : 'rgba(26, 58, 92, 0.03)',
                             px: 1.5,
-                            py: 0.75,
+                            py: 0.6,
                             borderRadius: 2,
-                            mt: 1,
+                            mt: 0.5,
                           }}
                         >
-                          <Phone sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.8 }} />
+                          <Phone sx={{ fontSize: 15, color: 'text.secondary', opacity: 0.6 }} />
                           <Typography 
                             variant="body2" 
                             color="text.secondary" 
                             sx={{ 
                               fontWeight: 600,
-                              fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                              fontSize: { xs: '0.85rem', sm: '0.9rem' },
                             }}
                           >
                             {client.phone}
@@ -343,7 +377,7 @@ export const ClientsPage = () => {
                       </Box>
 
                       {/* Actions */}
-                      <Stack direction="row" spacing={{ xs: 2.5, sm: 3 }} sx={{ marginLeft: '16px', flexShrink: 0 }}>
+                      <Stack direction="row" spacing={{ xs: 2, sm: 2.5 }} sx={{ marginLeft: '12px', flexShrink: 0 }}>
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -351,24 +385,25 @@ export const ClientsPage = () => {
                             handleOpenDialog(client);
                           }}
                           sx={{
-                            bgcolor: 'white',
-                            color: 'primary.main',
-                            width: { xs: 44, sm: 40 },
-                            height: { xs: 44, sm: 40 },
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.1)' : 'rgba(26, 58, 92, 0.05)',
+                            color: theme.palette.mode === 'dark' ? '#5a8fc4' : '#1a3a5c',
+                            width: { xs: 40, sm: 38 },
+                            height: { xs: 40, sm: 38 },
                             borderRadius: 2,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            border: '1px solid rgba(0,0,0,0.1)',
+                            border: theme.palette.mode === 'dark' 
+                              ? '1px solid rgba(90, 143, 196, 0.15)' 
+                              : '1px solid rgba(26, 58, 92, 0.08)',
                             '&:hover': { 
-                              bgcolor: 'rgba(255,255,255,0.95)',
-                              transform: 'scale(1.05)',
+                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(90, 143, 196, 0.2)' : 'rgba(26, 58, 92, 0.1)',
+                              transform: 'scale(1.06)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
                             },
-                            transition: 'all 0.2s ease-in-out',
+                            transition: 'all 0.2s ease',
                           }}
                         >
-                          <Edit sx={{ fontSize: { xs: 20, sm: 18 } }} />
+                          <Edit sx={{ fontSize: { xs: 18, sm: 17 } }} />
                         </IconButton>
                       </Stack>
                     </Stack>
@@ -387,7 +422,7 @@ export const ClientsPage = () => {
         fullScreen
         sx={{
           '& .MuiDialog-paper': {
-            bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#fff',
+            bgcolor: theme.palette.mode === 'dark' ? '#0f1a2e' : '#f4f6f9',
           },
         }}
       >
@@ -395,17 +430,29 @@ export const ClientsPage = () => {
           <Box
             sx={{
               background: theme.palette.mode === 'light' 
-                ? 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)'
-                : 'linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)',
+                ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
+                : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
               color: 'white',
               p: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(ellipse at 70% 50%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+                pointerEvents: 'none',
+              },
             }}
           >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <IconButton onClick={handleCloseDialog} sx={{ color: 'white' }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+              <IconButton onClick={handleCloseDialog} sx={{ color: 'rgba(255,255,255,0.9)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
                 <ArrowBack />
               </IconButton>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 0.3 }}>
                 {editingClient ? 'تعديل عميل' : 'إضافة عميل جديد'}
               </Typography>
             </Stack>
@@ -423,7 +470,7 @@ export const ClientsPage = () => {
                     label="الاسم"
                     error={!!errors.name}
                     helperText={errors.name?.message}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.paper' } }}
                   />
                 )}
               />
@@ -434,7 +481,7 @@ export const ClientsPage = () => {
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>النوع</InputLabel>
-                    <Select {...field} label="النوع" sx={{ borderRadius: 2 }}>
+                    <Select {...field} label="النوع" sx={{ borderRadius: 2.5, bgcolor: 'background.paper' }}>
                       <MenuItem value="individual">فرد</MenuItem>
                       <MenuItem value="company">شركة</MenuItem>
                     </Select>
@@ -452,7 +499,7 @@ export const ClientsPage = () => {
                     label="رقم الهاتف"
                     error={!!errors.phone}
                     helperText={errors.phone?.message}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.paper' } }}
                   />
                 )}
               />
@@ -468,7 +515,7 @@ export const ClientsPage = () => {
                     type="email"
                     error={!!errors.email}
                     helperText={errors.email?.message}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.paper' } }}
                   />
                 )}
               />
@@ -485,7 +532,7 @@ export const ClientsPage = () => {
                     rows={3}
                     error={!!errors.address}
                     helperText={errors.address?.message}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5, bgcolor: 'background.paper' } }}
                   />
                 )}
               />
@@ -496,7 +543,14 @@ export const ClientsPage = () => {
                 onClick={handleCloseDialog}
                 fullWidth
                 size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
+                sx={{ 
+                  borderRadius: 2.5, 
+                  py: 1.5,
+                  fontWeight: 600,
+                  border: theme.palette.mode === 'dark' 
+                    ? '1px solid rgba(90, 143, 196, 0.2)' 
+                    : '1px solid rgba(26, 58, 92, 0.15)',
+                }}
               >
                 إلغاء
               </Button>
@@ -505,7 +559,17 @@ export const ClientsPage = () => {
                 variant="contained"
                 fullWidth
                 size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
+                sx={{ 
+                  borderRadius: 2.5, 
+                  py: 1.5,
+                  bgcolor: '#1a3a5c',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
+                  '&:hover': {
+                    bgcolor: '#0e2440',
+                    boxShadow: '0 8px 22px -4px rgba(26, 58, 92, 0.4)',
+                  },
+                }}
               >
                 {editingClient ? 'حفظ التعديلات' : 'إضافة العميل'}
               </Button>

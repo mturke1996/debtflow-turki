@@ -207,7 +207,16 @@ export const DebtsPage = () => {
           startIcon={<Add />}
           variant="contained"
           onClick={() => handleOpenDialog()}
-          sx={{ borderRadius: 2 }}
+          sx={{ 
+            borderRadius: 2.5,
+            bgcolor: '#1a3a5c',
+            fontWeight: 700,
+            boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
+            '&:hover': {
+              bgcolor: '#0e2440',
+              boxShadow: '0 8px 22px -4px rgba(26, 58, 92, 0.4)',
+            },
+          }}
         >
           إضافة دين
         </Button>

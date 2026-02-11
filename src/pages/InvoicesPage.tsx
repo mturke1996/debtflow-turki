@@ -270,31 +270,47 @@ export const InvoicesPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: theme.palette.mode === "dark" ? "#0f172a" : "#f8fafc",
+        background: theme.palette.mode === "dark"
+          ? "linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)"
+          : "linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)",
         pb: 3,
       }}
     >
       {/* Header */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+          background: theme.palette.mode === 'light'
+            ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
+            : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
           pt: 2,
           pb: 3,
           px: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
+            pointerEvents: 'none',
+          },
         }}
       >
         <Container maxWidth="sm">
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
             <IconButton
               onClick={() => navigate("/")}
-              sx={{ color: "white", marginLeft: "8px" }}
+              sx={{ color: "rgba(255,255,255,0.9)", marginLeft: "8px", '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
             >
               <ArrowBack />
             </IconButton>
             <Typography
               variant="h5"
               fontWeight={800}
-              sx={{ color: "white", flexGrow: 1 }}
+              sx={{ color: "white", flexGrow: 1, letterSpacing: 0.3 }}
             >
               الفواتير
             </Typography>
@@ -302,11 +318,13 @@ export const InvoicesPage = () => {
               variant="contained"
               onClick={handleOpenDialog}
               sx={{
-                bgcolor: "white",
-                color: "#3b82f6",
+                bgcolor: "rgba(201, 165, 78, 0.9)",
+                color: "#1a2a3e",
                 fontWeight: 700,
-                "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
-                borderRadius: 2,
+                "&:hover": { bgcolor: "#c9a54e", transform: 'scale(1.04)' },
+                borderRadius: 2.5,
+                boxShadow: '0 4px 14px -3px rgba(201, 165, 78, 0.4)',
+                transition: 'all 0.25s ease',
               }}
               startIcon={<Add />}
             >
@@ -324,9 +342,11 @@ export const InvoicesPage = () => {
               size="small"
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  bgcolor: "white",
-                  borderRadius: 2,
+                  bgcolor: "rgba(255,255,255,0.95)",
+                  borderRadius: 3,
+                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
                   "& fieldset": { border: "none" },
+                  '&:hover': { bgcolor: 'white' },
                 },
               }}
               InputProps={{
@@ -342,8 +362,9 @@ export const InvoicesPage = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 sx={{
-                  bgcolor: "white",
-                  borderRadius: 2,
+                  bgcolor: "rgba(255,255,255,0.95)",
+                  borderRadius: 3,
+                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
                   "& fieldset": { border: "none" },
                 }}
               >
@@ -359,7 +380,7 @@ export const InvoicesPage = () => {
       </Box>
 
       {/* Invoices List */}
-      <Container maxWidth="sm" sx={{ mt: -2 }}>
+      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
         <Stack spacing={3.5}>
           {filteredInvoices.length === 0 ? (
             <Card sx={{ borderRadius: 2.5, textAlign: "center", py: 6 }}>
@@ -564,7 +585,9 @@ export const InvoicesPage = () => {
         >
           <Box
             sx={{
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              background: theme.palette.mode === 'light'
+                ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
+                : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
               color: "white",
               p: 2,
             }}

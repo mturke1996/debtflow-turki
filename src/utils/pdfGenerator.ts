@@ -12,9 +12,9 @@ import QRCode from "qrcode";
 export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
   // Company information
   const COMPANY_INFO = {
-    name: "المهندس محمد التركي",
-    address: "تاجوراء شارع اولاد التركي",
-    phone: "0913041404",
+    name: "م. محمد سالم التركي",
+    address: "تاجوراء ليبيا",
+    phone: "0911191263",
     email: "",
     taxNumber: "",
   };
@@ -87,13 +87,34 @@ export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
         }
         
         .header {
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+          background: linear-gradient(135deg, #0c1929 0%, #1a2744 50%, #0f1d32 100%);
           color: #ffffff;
           padding: 32px 24px;
           border-radius: 0;
           margin: -20px -20px 24px -20px;
           text-align: center;
-          box-shadow: 0 4px 20px rgba(30, 64, 175, 0.15);
+          box-shadow: 0 4px 20px rgba(12, 25, 41, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 20%, rgba(184, 156, 95, 0.1) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        
+        .header-logo {
+          width: 70px;
+          height: 70px;
+          margin: 0 auto 12px;
+          display: block;
+          filter: drop-shadow(0 4px 8px rgba(184, 156, 95, 0.3));
         }
         
         @media screen and (max-width: 768px) {
@@ -136,6 +157,7 @@ export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
         .company-details-item {
           display: inline-block;
           margin: 0 12px;
+          color: #b89c5f;
         }
         
         @media screen and (max-width: 768px) {
@@ -503,10 +525,12 @@ export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
       <div class="invoice-container">
         <!-- Header -->
         <div class="header">
+          <img src="${window.location.origin}/logo.png" alt="شعار" class="header-logo" />
           <div class="company-name">${COMPANY_INFO.name}</div>
+          <div style="color: #b89c5f; font-weight: 600; font-size: 14px; margin-bottom: 10px;">إنشاءات وتعهدات</div>
           <div class="company-details">
-            <span class="company-details-item">${COMPANY_INFO.address}</span>
-            <span class="company-details-item">${COMPANY_INFO.phone}</span>
+            <span class="company-details-item">📍 ${COMPANY_INFO.address}</span>
+            <span class="company-details-item">📞 ${COMPANY_INFO.phone}</span>
           </div>
         </div>
         
@@ -627,7 +651,7 @@ export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
         <!-- Footer -->
         <div class="footer">
           <p class="footer-main">شكراً لتعاملكم معنا</p>
-          <p>هذه فاتورة رسمية معتمدة</p>
+          <p>م. محمد سالم التركي | 📍 تاجوراء ليبيا | 📞 0911191263</p>
         </div>
       </div>
       
@@ -652,9 +676,9 @@ export const generateExpenseInvoicePDF = (
 ) => {
   // Company information
   const COMPANY_INFO = {
-    name: "المهندس محمد التركي",
-    address: "تاجوراء شارع اولاد التركي",
-    phone: "0913041404",
+    name: "م. محمد سالم التركي",
+    address: "تاجوراء ليبيا",
+    phone: "0911191263",
     email: "",
     taxNumber: "",
   };
@@ -737,55 +761,34 @@ export const generateExpenseInvoicePDF = (
         }
         
         .header {
-          background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+          background: linear-gradient(135deg, #0c1929 0%, #1a2744 50%, #0f1d32 100%);
           color: #ffffff;
           padding: 32px 24px;
           border-radius: 0;
           margin: -20px -20px 24px -20px;
           text-align: center;
-          box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+          box-shadow: 0 4px 20px rgba(12, 25, 41, 0.3);
+          position: relative;
+          overflow: hidden;
         }
         
-        @media screen and (max-width: 768px) {
-          .header {
-            padding: 24px 16px;
-            margin: -12px -12px 20px -12px;
-          }
+        .header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 20%, rgba(184, 156, 95, 0.1) 0%, transparent 50%);
+          pointer-events: none;
         }
         
-        .company-name {
-          font-size: 28px;
-          font-weight: 900;
-          color: #ffffff;
-          margin-bottom: 16px;
-          letter-spacing: 0.3px;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        @media screen and (max-width: 768px) {
-          .company-name {
-            font-size: 22px;
-            margin-bottom: 12px;
-          }
-        }
-        
-        .company-details {
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.95);
-          line-height: 2;
-          font-weight: 500;
-        }
-        
-        @media screen and (max-width: 768px) {
-          .company-details {
-            font-size: 13px;
-            line-height: 1.8;
-          }
-        }
-        
-        .company-details-item {
-          display: inline-block;
-          margin: 0 12px;
+        .header-logo {
+          width: 70px;
+          height: 70px;
+          margin: 0 auto 12px;
+          display: block;
+          filter: drop-shadow(0 4px 8px rgba(184, 156, 95, 0.3));
         }
         
         @media screen and (max-width: 768px) {
@@ -1225,10 +1228,12 @@ export const generateExpenseInvoicePDF = (
       <div class="invoice-container">
         <!-- Header -->
         <div class="header">
+          <img src="${window.location.origin}/logo.png" alt="شعار" class="header-logo" />
           <div class="company-name">${COMPANY_INFO.name}</div>
+          <div style="color: #b89c5f; font-weight: 600; font-size: 14px; margin-bottom: 10px;">إنشاءات وتعهدات</div>
           <div class="company-details">
-            <span class="company-details-item">${COMPANY_INFO.address}</span>
-            <span class="company-details-item">${COMPANY_INFO.phone}</span>
+            <span class="company-details-item" style="color: #b89c5f;">📍 ${COMPANY_INFO.address}</span>
+            <span class="company-details-item" style="color: #b89c5f;">📞 ${COMPANY_INFO.phone}</span>
           </div>
         </div>
         
@@ -1417,7 +1422,7 @@ export const generateExpenseInvoicePDF = (
         <!-- Footer -->
         <div class="footer">
           <p class="footer-main">شكراً لتعاملكم معنا</p>
-          <p>هذه فاتورة مصروفات رسمية معتمدة</p>
+          <p>م. محمد سالم التركي | 📍 تاجوراء ليبيا | 📞 0911191263</p>
         </div>
       </div>
       
@@ -1443,9 +1448,9 @@ export const generatePaymentsSummaryPDF = (
 ) => {
   // Company information
   const COMPANY_INFO = {
-    name: "المهندس محمد التركي",
-    address: "تاجوراء شارع اولاد التركي",
-    phone: "0913041404",
+    name: "م. محمد سالم التركي",
+    address: "تاجوراء ليبيا",
+    phone: "0911191263",
     email: "",
     taxNumber: "",
   };
@@ -1546,13 +1551,34 @@ export const generatePaymentsSummaryPDF = (
         }
         
         .header {
-          background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+          background: linear-gradient(135deg, #0c1929 0%, #1a2744 50%, #0f1d32 100%);
           color: #ffffff;
           padding: 32px 24px;
           border-radius: 0;
           margin: -20px -20px 24px -20px;
           text-align: center;
-          box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+          box-shadow: 0 4px 20px rgba(12, 25, 41, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 20%, rgba(184, 156, 95, 0.1) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        
+        .header-logo {
+          width: 70px;
+          height: 70px;
+          margin: 0 auto 12px;
+          display: block;
+          filter: drop-shadow(0 4px 8px rgba(184, 156, 95, 0.3));
         }
         
         @media screen and (max-width: 768px) {
@@ -1566,7 +1592,7 @@ export const generatePaymentsSummaryPDF = (
           font-size: 28px;
           font-weight: 900;
           color: #ffffff;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
           letter-spacing: 0.3px;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -1574,13 +1600,13 @@ export const generatePaymentsSummaryPDF = (
         @media screen and (max-width: 768px) {
           .company-name {
             font-size: 22px;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
           }
         }
         
         .company-details {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.95);
+          color: #b89c5f;
           line-height: 2;
           font-weight: 500;
         }
@@ -1926,10 +1952,12 @@ export const generatePaymentsSummaryPDF = (
       <div class="invoice-container">
         <!-- Header -->
         <div class="header">
+          <img src="${window.location.origin}/logo.png" alt="شعار" class="header-logo" />
           <div class="company-name">${COMPANY_INFO.name}</div>
+          <div style="color: #b89c5f; font-weight: 600; font-size: 14px; margin-bottom: 10px;">إنشاءات وتعهدات</div>
           <div class="company-details">
-            <span class="company-details-item">${COMPANY_INFO.address}</span>
-            <span class="company-details-item">${COMPANY_INFO.phone}</span>
+            <span class="company-details-item">📍 ${COMPANY_INFO.address}</span>
+            <span class="company-details-item">📞 ${COMPANY_INFO.phone}</span>
           </div>
         </div>
         
@@ -2038,7 +2066,7 @@ export const generatePaymentsSummaryPDF = (
         <!-- Footer -->
         <div class="footer">
           <p class="footer-main">شكراً لتعاملكم معنا</p>
-          <p>هذا تقرير مدفوعات رسمي معتمد</p>
+          <p>م. محمد سالم التركي | 📍 تاجوراء ليبيا | 📞 0911191263</p>
         </div>
       </div>
       
@@ -2059,13 +2087,14 @@ export const generatePaymentsSummaryPDF = (
 
 export const generateExpenseInvoicesSummaryPDF = (
   expenseInvoices: ExpenseInvoice[],
-  clients: Client[]
+  clients: Client[],
+  payments: Payment[]
 ) => {
   // Company information
   const COMPANY_INFO = {
-    name: "المهندس محمد التركي",
-    address: "تاجوراء شارع اولاد التركي",
-    phone: "0913041404",
+    name: "م. محمد سالم التركي",
+    address: "تاجوراء ليبيا",
+    phone: "0911191263",
     email: "",
     taxNumber: "",
   };
@@ -2087,11 +2116,13 @@ export const generateExpenseInvoicesSummaryPDF = (
     0
   );
 
-  // Calculate total profit
-  const totalProfit = expenseInvoices.reduce((sum, inv) => {
-    const client = clients.find((c) => c.id === inv.clientId);
-    const percentage = client?.profitPercentage || 0;
-    return sum + (inv.totalAmount * percentage) / 100;
+  // Calculate total profit from payments
+  const totalProfit = clients.reduce((sum, client) => {
+    const percentage = client.profitPercentage || 0;
+    if (percentage <= 0) return sum;
+    const clientPayments = payments.filter((p) => p.clientId === client.id);
+    const clientTotalPayments = clientPayments.reduce((s, p) => s + p.amount, 0);
+    return sum + (clientTotalPayments * percentage) / 100;
   }, 0);
 
   // Generate HTML for the expense invoices summary
@@ -2155,13 +2186,34 @@ export const generateExpenseInvoicesSummaryPDF = (
         }
         
         .header {
-          background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+          background: linear-gradient(135deg, #0c1929 0%, #1a2744 50%, #0f1d32 100%);
           color: #ffffff;
           padding: 32px 24px;
           border-radius: 0;
           margin: -20px -20px 24px -20px;
           text-align: center;
-          box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+          box-shadow: 0 4px 20px rgba(12, 25, 41, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 20%, rgba(184, 156, 95, 0.1) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        
+        .header-logo {
+          width: 70px;
+          height: 70px;
+          margin: 0 auto 12px;
+          display: block;
+          filter: drop-shadow(0 4px 8px rgba(184, 156, 95, 0.3));
         }
         
         @media screen and (max-width: 768px) {
@@ -2175,7 +2227,7 @@ export const generateExpenseInvoicesSummaryPDF = (
           font-size: 28px;
           font-weight: 900;
           color: #ffffff;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
           letter-spacing: 0.3px;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -2183,13 +2235,13 @@ export const generateExpenseInvoicesSummaryPDF = (
         @media screen and (max-width: 768px) {
           .company-name {
             font-size: 22px;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
           }
         }
         
         .company-details {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.95);
+          color: #b89c5f;
           line-height: 2;
           font-weight: 500;
         }
@@ -2527,10 +2579,12 @@ export const generateExpenseInvoicesSummaryPDF = (
       <div class="invoice-container">
         <!-- Header -->
         <div class="header">
+          <img src="${window.location.origin}/logo.png" alt="شعار" class="header-logo" />
           <div class="company-name">${COMPANY_INFO.name}</div>
+          <div style="color: #b89c5f; font-weight: 600; font-size: 14px; margin-bottom: 10px;">إنشاءات وتعهدات</div>
           <div class="company-details">
-            <span class="company-details-item">${COMPANY_INFO.address}</span>
-            <span class="company-details-item">${COMPANY_INFO.phone}</span>
+            <span class="company-details-item">📍 ${COMPANY_INFO.address}</span>
+            <span class="company-details-item">📞 ${COMPANY_INFO.phone}</span>
           </div>
         </div>
         
@@ -2716,7 +2770,7 @@ export const generateExpenseInvoicesSummaryPDF = (
         <!-- Footer -->
         <div class="footer">
           <p class="footer-main">شكراً لتعاملكم معنا</p>
-          <p>هذا تقرير فواتير مصروفات رسمي معتمد</p>
+          <p>م. محمد سالم التركي | 📍 تاجوراء ليبيا | 📞 0911191263</p>
         </div>
       </div>
       
@@ -2743,9 +2797,9 @@ export const generateFinalReportPDF = (
 ) => {
   // Company information
   const COMPANY_INFO = {
-    name: "المهندس محمد التركي",
-    address: "تاجوراء شارع اولاد التركي",
-    phone: "0913041404",
+    name: "م. محمد سالم التركي",
+    address: "تاجوراء ليبيا",
+    phone: "0911191263",
     email: "",
     taxNumber: "",
   };
@@ -2762,10 +2816,10 @@ export const generateFinalReportPDF = (
   const totalPayments = payments.reduce((sum, pay) => sum + pay.amount, 0);
   const profitPercentage = client.profitPercentage || 0;
   const profit =
-    totalExpenses > 0 && profitPercentage > 0
-      ? (totalExpenses * profitPercentage) / 100
+    totalPayments > 0 && profitPercentage > 0
+      ? (totalPayments * profitPercentage) / 100
       : 0;
-  const remaining = totalPayments - (totalExpenses + profit);
+  const remaining = totalPayments - profit;
 
   // Group expenses by date
   const expensesByDate = expenses.reduce((acc, exp) => {
@@ -2863,13 +2917,13 @@ export const generateFinalReportPDF = (
         }
         
         .header {
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+          background: linear-gradient(135deg, #0c1929 0%, #1a2744 50%, #0f1d32 100%);
           color: #ffffff;
           padding: 40px 28px;
           border-radius: 0;
           margin: -20px -20px 32px -20px;
           text-align: center;
-          box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
+          box-shadow: 0 8px 32px rgba(12, 25, 41, 0.3);
           position: relative;
           overflow: hidden;
         }
@@ -2877,11 +2931,20 @@ export const generateFinalReportPDF = (
         .header::before {
           content: '';
           position: absolute;
-          top: -50%;
-          right: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(circle at 30% 20%, rgba(184, 156, 95, 0.1) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        
+        .header-logo {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 16px;
+          display: block;
+          filter: drop-shadow(0 4px 12px rgba(184, 156, 95, 0.3));
         }
         
         @media screen and (max-width: 768px) {
@@ -2928,6 +2991,7 @@ export const generateFinalReportPDF = (
         .company-details-item {
           display: inline-block;
           margin: 0 14px;
+          color: #b89c5f;
         }
         
         @media screen and (max-width: 768px) {
@@ -3473,10 +3537,12 @@ export const generateFinalReportPDF = (
       <div class="report-container">
         <!-- Header -->
         <div class="header">
+          <img src="${window.location.origin}/logo.png" alt="شعار" class="header-logo" />
           <div class="company-name">${COMPANY_INFO.name}</div>
+          <div style="color: #b89c5f; font-weight: 600; font-size: 16px; margin-bottom: 12px;">إنشاءات وتعهدات</div>
           <div class="company-details">
-            <span class="company-details-item">${COMPANY_INFO.address}</span>
-            <span class="company-details-item">${COMPANY_INFO.phone}</span>
+            <span class="company-details-item">📍 ${COMPANY_INFO.address}</span>
+            <span class="company-details-item">📞 ${COMPANY_INFO.phone}</span>
           </div>
         </div>
         
@@ -3562,16 +3628,16 @@ export const generateFinalReportPDF = (
             <div class="summary-card-value profit">${formatCurrency(
               profit
             )}</div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">من المصروفات</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">من المدفوعات</div>
           </div>
           
           <div class="summary-card remaining">
             <div class="summary-card-icon">💼</div>
-            <div class="summary-card-label">المتبقي</div>
+            <div class="summary-card-label">الباقي</div>
             <div class="summary-card-value remaining">${formatCurrency(
               remaining
             )}</div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">المدفوعات - المصروفات</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">المدفوعات - الربح</div>
           </div>
         </div>
         
@@ -3727,13 +3793,7 @@ export const generateFinalReportPDF = (
               )}</div>
             </div>
             <div class="calculation-item">
-              <div class="calculation-label">إجمالي المصروفات + النسبة</div>
-              <div class="calculation-value" style="color: #dc2626;">${formatCurrency(
-                totalExpenses + profit
-              )}</div>
-            </div>
-            <div class="calculation-item">
-              <div class="calculation-label">المتبقي</div>
+              <div class="calculation-label">الباقي (المدفوعات - الربح)</div>
               <div class="calculation-value" style="color: #3b82f6;">${formatCurrency(
                 remaining
               )}</div>
@@ -3744,7 +3804,7 @@ export const generateFinalReportPDF = (
         <!-- Footer -->
         <div class="footer">
           <p class="footer-main">شكراً لتعاملكم معنا</p>
-          <p>هذا تقرير نهائي رسمي معتمد - ${dayjs().format("DD/MM/YYYY")}</p>
+          <p>م. محمد سالم التركي | 📍 تاجوراء ليبيا | 📞 0911191263</p>
         </div>
       </div>
       
