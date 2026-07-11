@@ -50,3 +50,14 @@ HOW_TO_SEE_CHANGES.md
 README_UPDATES.md
 TEST_UPDATES.html
 verify-changes.bat
+
+Etlala/
+
+# Agent skills (local only)
+.agents/
+.claude/
+skills-lock.json
+
+# Generated vite config artifacts
+vite.config.js
+vite.config.d.ts

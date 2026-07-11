@@ -7,17 +7,11 @@ import type {
 } from "../types";
 import { formatCurrency } from "./calculations";
 import dayjs from "dayjs";
-import QRCode from "qrcode";
+import { PRINT_COMPANY_INFO } from "@/constants/companyInfo";
 
 export const generateInvoicePDF = (invoice: Invoice, client: Client) => {
   // Company information
-  const COMPANY_INFO = {
-    name: "م. محمد سالم التركي",
-    address: "تاجوراء ليبيا",
-    phone: "0911191263",
-    email: "",
-    taxNumber: "",
-  };
+  const COMPANY_INFO = PRINT_COMPANY_INFO;
 
   // Create a new window for printing
   const printWindow = window.open("", "_blank");
@@ -675,13 +669,7 @@ export const generateExpenseInvoicePDF = (
   client: Client
 ) => {
   // Company information
-  const COMPANY_INFO = {
-    name: "م. محمد سالم التركي",
-    address: "تاجوراء ليبيا",
-    phone: "0911191263",
-    email: "",
-    taxNumber: "",
-  };
+  const COMPANY_INFO = PRINT_COMPANY_INFO;
 
   // Create a new window for printing
   const printWindow = window.open("", "_blank");
@@ -1447,13 +1435,7 @@ export const generatePaymentsSummaryPDF = (
   invoices: Invoice[]
 ) => {
   // Company information
-  const COMPANY_INFO = {
-    name: "م. محمد سالم التركي",
-    address: "تاجوراء ليبيا",
-    phone: "0911191263",
-    email: "",
-    taxNumber: "",
-  };
+  const COMPANY_INFO = PRINT_COMPANY_INFO;
 
   // Create a new window for printing
   const printWindow = window.open("", "_blank");
@@ -2091,13 +2073,7 @@ export const generateExpenseInvoicesSummaryPDF = (
   payments: Payment[]
 ) => {
   // Company information
-  const COMPANY_INFO = {
-    name: "م. محمد سالم التركي",
-    address: "تاجوراء ليبيا",
-    phone: "0911191263",
-    email: "",
-    taxNumber: "",
-  };
+  const COMPANY_INFO = PRINT_COMPANY_INFO;
 
   // Create a new window for printing
   const printWindow = window.open("", "_blank");
@@ -2796,13 +2772,7 @@ export const generateFinalReportPDF = (
   invoices: Invoice[]
 ) => {
   // Company information
-  const COMPANY_INFO = {
-    name: "م. محمد سالم التركي",
-    address: "تاجوراء ليبيا",
-    phone: "0911191263",
-    email: "",
-    taxNumber: "",
-  };
+  const COMPANY_INFO = PRINT_COMPANY_INFO;
 
   // Create a new window for printing
   const printWindow = window.open("", "_blank");

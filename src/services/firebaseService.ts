@@ -4,6 +4,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -15,7 +16,7 @@ import {
   QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import type { Client, Invoice, Payment, Debt, Project, Expense, StandaloneDebt, ExpenseInvoice, DebtParty } from '../types';
+import type { Client, Invoice, Payment, Debt, Project, Expense, StandaloneDebt, ExpenseInvoice, DebtParty, CustomExpenseCategory } from '../types';
 
 // Generic CRUD operations
 export class FirestoreService<T extends { id: string }> {
@@ -68,6 +69,25 @@ export class FirestoreService<T extends { id: string }> {
       return docRef.id;
     } catch (error) {
       console.error(`Error adding ${this.collectionName}:`, error);
+      throw error;
+    }
+  }
+
+  /** Upsert a document with a known id (used for backup restore). */
+  async setWithId(id: string, data: Omit<T, 'id'>): Promise<void> {
+    try {
+      const docRef = doc(db, this.collectionName, id);
+      const { id: _ignoreId, ...rest } = data as Record<string, unknown>;
+      await setDoc(
+        docRef,
+        {
+          ...rest,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error(`Error setting ${this.collectionName}/${id}:`, error);
       throw error;
     }
   }
@@ -127,6 +147,7 @@ export const expensesService = new FirestoreService<Expense>('expenses');
 export const standaloneDebtsService = new FirestoreService<StandaloneDebt>('standaloneDebts');
 export const expenseInvoicesService = new FirestoreService<ExpenseInvoice>('expenseInvoices');
 export const debtPartiesService = new FirestoreService<DebtParty>('debtParties');
+export const customExpenseCategoriesService = new FirestoreService<CustomExpenseCategory>('customExpenseCategories');
 
 // Special functions for expense invoices
 export async function closeExpensesAndCreateInvoice(
@@ -168,6 +189,8 @@ export async function closeExpensesAndCreateInvoice(
       status: 'draft',
       issueDate: new Date().toISOString(),
       notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     // Mark expenses as closed

@@ -1,77 +1,70 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from "react";
+import { Search, CalendarToday, TrendingUp, Payments } from "@mui/icons-material";
 import {
-  Box,
   Button,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-  TextField,
-  InputAdornment,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   FormControl,
+  InputAdornment,
   InputLabel,
-  Select,
   MenuItem,
-  Container,
+  Select,
   Stack,
-  useTheme,
-  Divider,
-  Avatar,
-  Snackbar,
-  Alert,
-} from '@mui/material';
-import {
-  Add,
-  Search,
-  Edit,
-  Delete,
-  ArrowBack,
-  Payment as PaymentIcon,
-  PictureAsPdf,
-  Share,
-} from '@mui/icons-material';
-import { useDataStore } from '@/store/useDataStore';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Payment } from '@/types';
-import { formatCurrency } from '@/utils/calculations';
-import { generatePaymentsSummaryPDF } from '@/utils/pdfGenerator';
-import dayjs from 'dayjs';
+  TextField,
+} from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import dayjs from "dayjs";
+import toast from "react-hot-toast";
+import { useDataStore } from "@/store/useDataStore";
+import type { Payment } from "@/types";
+import { formatCurrency } from "@/utils/calculations";
+import { formatDate, paymentMethods } from "@/utils/formatters";
+import { downloadPdf } from "@/utils/pdfService";
+import { loadStyledPDFs } from "@/components/pdf/lazyPdf";
+import { PageHero } from "@/components/ui/PageHero";
+import { HeroCtaButton, FilterChip, RowActionBar, RowActionButton } from "@/components/ui/ActionButtons";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 const paymentSchema = z.object({
-  clientId: z.string().min(1, 'يجب اختيار عميل'),
+  clientId: z.string().min(1, "يجب اختيار عميل"),
   invoiceId: z.string().optional(),
-  amount: z.number().min(0.01, 'المبلغ يجب أن يكون أكبر من 0'),
-  paymentMethod: z.enum(['cash', 'bank_transfer', 'check', 'credit_card']),
+  amount: z.number().min(0.01, "المبلغ يجب أن يكون أكبر من 0"),
+  paymentMethod: z.enum(["cash", "bank_transfer", "check", "credit_card"]),
   paymentDate: z.string(),
   notes: z.string().optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
 
+const METHOD_FILTERS = [
+  { id: "all", label: "الكل" },
+  { id: "cash", label: "نقدي" },
+  { id: "bank_transfer", label: "تحويل بنكي" },
+  { id: "check", label: "شيك" },
+  { id: "credit_card", label: "بطاقة" },
+] as const;
+
+function getClientName(payment: Payment, clients: { id: string; name: string }[], invoices: { id: string; tempClientName?: string }[]) {
+  const client = clients.find((c) => c.id === payment.clientId);
+  if (client) return client.name;
+  const invoice = invoices.find((i) => i.id === payment.invoiceId);
+  if (invoice?.tempClientName) return invoice.tempClientName;
+  return "عميل غير معروف";
+}
+
 export const PaymentsPage = () => {
-  const navigate = useNavigate();
-  const theme = useTheme();
   const { clients, invoices, payments, addPayment, updatePayment, deletePayment } = useDataStore();
-  
-  const handleShareTotal = () => {
-    generatePaymentsSummaryPDF(payments, clients, invoices);
-  };
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [methodFilter, setMethodFilter] = useState<string>('all');
+  const confirm = useConfirm();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const {
     control,
@@ -82,48 +75,61 @@ export const PaymentsPage = () => {
   } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      clientId: '',
-      invoiceId: '',
+      clientId: "",
+      invoiceId: "",
       amount: 0,
-      paymentMethod: 'cash',
-      paymentDate: dayjs().format('YYYY-MM-DD'),
-      notes: '',
+      paymentMethod: "cash",
+      paymentDate: dayjs().format("YYYY-MM-DD"),
+      notes: "",
     },
   });
 
+  const total = useMemo(() => payments.reduce((sum, p) => sum + p.amount, 0), [payments]);
+
+  const collectedThisMonth = useMemo(() => {
+    const start = dayjs().startOf("month");
+    return payments
+      .filter((p) => dayjs(p.paymentDate).isAfter(start) || dayjs(p.paymentDate).isSame(start, "day"))
+      .reduce((s, p) => s + p.amount, 0);
+  }, [payments]);
+
   const filteredPayments = useMemo(() => {
-    return payments.filter((payment) => {
-      const invoice = payment.invoiceId ? invoices.find((i) => i.id === payment.invoiceId) : null;
-      const client = clients.find((c) => c.id === payment.clientId);
-      const matchesSearch =
-        invoice?.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        searchQuery === '';
-      const matchesMethod = methodFilter === 'all' || payment.paymentMethod === methodFilter;
-      return matchesSearch && matchesMethod;
-    });
-  }, [payments, invoices, clients, searchQuery, methodFilter]);
+    const q = searchQuery.toLowerCase();
+    return payments
+      .filter((payment) => {
+        const clientName = getClientName(payment, clients, invoices);
+        const invoice = payment.invoiceId ? invoices.find((i) => i.id === payment.invoiceId) : null;
+        const matchesSearch =
+          clientName.toLowerCase().includes(q) ||
+          invoice?.invoiceNumber.toLowerCase().includes(q) ||
+          payment.notes?.toLowerCase().includes(q) ||
+          q === "";
+        const matchesMethod = methodFilter === "all" || payment.paymentMethod === methodFilter;
+        return matchesSearch && matchesMethod;
+      })
+      .sort((a, b) => dayjs(b.paymentDate).diff(dayjs(a.paymentDate)));
+  }, [payments, clients, invoices, searchQuery, methodFilter]);
 
   const handleOpenDialog = (payment?: Payment) => {
     if (payment) {
       setEditingPayment(payment);
       reset({
         clientId: payment.clientId,
-        invoiceId: payment.invoiceId || '',
+        invoiceId: payment.invoiceId || "",
         amount: payment.amount,
         paymentMethod: payment.paymentMethod,
-        paymentDate: dayjs(payment.paymentDate).format('YYYY-MM-DD'),
-        notes: payment.notes || '',
+        paymentDate: dayjs(payment.paymentDate).format("YYYY-MM-DD"),
+        notes: payment.notes || "",
       });
     } else {
       setEditingPayment(null);
       reset({
-        clientId: '',
-        invoiceId: '',
+        clientId: "",
+        invoiceId: "",
         amount: 0,
-        paymentMethod: 'cash',
-        paymentDate: dayjs().format('YYYY-MM-DD'),
-        notes: '',
+        paymentMethod: "cash",
+        paymentDate: dayjs().format("YYYY-MM-DD"),
+        notes: "",
       });
     }
     setDialogOpen(true);
@@ -136,421 +142,239 @@ export const PaymentsPage = () => {
   };
 
   const onSubmit = async (data: PaymentFormData) => {
+    if (saving) return;
+    setSaving(true);
+    const toastId = toast.loading(editingPayment ? "جاري التحديث..." : "جاري الحفظ...");
     try {
-      const client = clients.find((c) => c.id === data.clientId);
-      if (!client) return;
-
       if (editingPayment) {
         await updatePayment(editingPayment.id, {
-          clientId: data.clientId || '',
-          invoiceId: data.invoiceId || '',
+          clientId: data.clientId,
+          invoiceId: data.invoiceId || "",
           amount: data.amount,
-          paymentMethod: data.paymentMethod || 'cash',
-          paymentDate: data.paymentDate || dayjs().format('YYYY-MM-DD'),
-          notes: data.notes || '',
+          paymentMethod: data.paymentMethod,
+          paymentDate: data.paymentDate,
+          notes: data.notes || "",
         });
-        setEditingPayment(null);
-        setSnackbarMessage("تم التعديل بنجاح");
+        toast.success("تم التحديث", { id: toastId });
       } else {
-        const newPayment: Payment = {
+        await addPayment({
           id: crypto.randomUUID(),
-          invoiceId: data.invoiceId || '',
+          invoiceId: data.invoiceId || "",
           clientId: data.clientId,
           amount: data.amount,
           paymentMethod: data.paymentMethod,
           paymentDate: data.paymentDate,
-          notes: data.notes || '',
+          notes: data.notes || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        };
-        await addPayment(newPayment);
-        setSnackbarMessage("تمت الإضافة بنجاح");
+        });
+        toast.success("تمت الإضافة", { id: toastId });
       }
       handleCloseDialog();
-      setSnackbarOpen(true);
-    } catch (error: any) {
-      console.error('Error saving payment:', error);
-      const errorMessage = error?.message || error?.toString() || "حدث خطأ أثناء الحفظ";
-      setSnackbarMessage(errorMessage);
-      setSnackbarOpen(true);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "حدث خطأ أثناء الحفظ";
+      toast.error(msg, { id: toastId });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذه الدفعة؟')) {
-      await deletePayment(id);
+  const handleDelete = async (payment: Payment) => {
+    const ok = await confirm({
+      title: "حذف دفعة",
+      message: "هل أنت متأكد من حذف هذه الدفعة؟",
+      confirmLabel: "حذف",
+      tone: "danger",
+    });
+    if (!ok) return;
+    const toastId = toast.loading("جاري الحذف...");
+    try {
+      await deletePayment(payment.id);
+      toast.success("تم الحذف", { id: toastId });
+    } catch {
+      toast.error("تعذّر الحذف", { id: toastId });
     }
   };
 
-  const getPaymentMethodLabel = (method: Payment['paymentMethod']) => {
-    switch (method) {
-      case 'cash':
-        return 'نقدي';
-      case 'bank_transfer':
-        return 'تحويل بنكي';
-      case 'check':
-        return 'شيك';
-      case 'credit_card':
-        return 'بطاقة ائتمان';
-      default:
-        return method;
-    }
+  const handleExportPdf = async () => {
+    const { PaymentsSummaryStyledPDF } = await loadStyledPDFs();
+    await downloadPdf(
+      <PaymentsSummaryStyledPDF payments={payments} clients={clients} />,
+      `مدفوعات-${dayjs().format("YYYY-MM-DD")}.pdf`
+    );
   };
 
-  const totalPayments = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+  const methodLabel = (method: Payment["paymentMethod"]) =>
+    paymentMethods[method as keyof typeof paymentMethods] ?? method;
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: theme.palette.mode === 'dark'
-          ? 'linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)'
-          : 'linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)',
-        pb: 3,
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          background: theme.palette.mode === 'light' 
-            ? 'linear-gradient(160deg, #0d7a54 0%, #0d9668 100%)'
-            : 'linear-gradient(160deg, #087a54 0%, #0d9668 100%)',
-          pt: 2,
-          pb: 3,
-          px: 2,
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
-            pointerEvents: 'none',
-          },
-        }}
-      >
-        <Container maxWidth="sm">
-          <Box sx={{ mb: 2 }}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-              spacing={2}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                <IconButton onClick={() => navigate('/')} sx={{ color: 'rgba(255,255,255,0.9)', ml: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                  <ArrowBack />
-                </IconButton>
-                <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1, letterSpacing: 0.3 }}>
-                  المدفوعات ({payments.length})
-                </Typography>
-              </Box>
-              
-              <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                {payments.length > 0 && (
-                  <Button
-                    variant="contained"
-                    onClick={handleShareTotal}
-                    fullWidth={true}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.15)',
-                      color: 'white',
-                      fontWeight: 700,
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-                      borderRadius: 2.5,
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      flex: 1,
-                      backdropFilter: 'blur(8px)',
-                    }}
-                    startIcon={<Share />}
-                  >
-                    مشاركة
-                  </Button>
-                )}
-                <Button
-                  variant="contained"
-                  onClick={() => handleOpenDialog()}
-                  fullWidth={true}
-                  sx={{
-                    bgcolor: 'rgba(201, 165, 78, 0.9)',
-                    color: '#1a2a3e',
-                    fontWeight: 700,
-                    '&:hover': { bgcolor: '#c9a54e', transform: 'scale(1.04)' },
-                    borderRadius: 2.5,
-                    flex: 1,
-                    boxShadow: '0 4px 14px -3px rgba(201, 165, 78, 0.4)',
-                    transition: 'all 0.25s ease',
-                  }}
-                  startIcon={<Add />}
-                >
-                  جديدة
-                </Button>
-              </Stack>
+    <>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 32 }}>
+        <PageHero
+          accent="success"
+          eyebrow={
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <TrendingUp sx={{ fontSize: 14 }} />
+              المدفوعات
+            </span>
+          }
+          title="إجمالي المحصّل"
+          headline={formatCurrency(total)}
+          trailing={
+            <Stack direction="row" spacing={1}>
+              {payments.length > 0 ? (
+                <HeroCtaButton icon="share" compact onClick={() => void handleExportPdf()}>
+                  مشاركة
+                </HeroCtaButton>
+              ) : null}
+              <HeroCtaButton onClick={() => handleOpenDialog()}>دفعة جديدة</HeroCtaButton>
             </Stack>
-          </Box>
+          }
+          footerStats={[
+            { label: "عدد العمليات", value: payments.length },
+            {
+              label: "متوسط الدفعة",
+              value: formatCurrency(payments.length ? total / payments.length : 0),
+            },
+            {
+              label: "محصّل الشهر",
+              value: formatCurrency(collectedThisMonth),
+              valueClassName: "hero-stat-value--gold",
+            },
+          ]}
+        />
 
-          {/* Stats Card */}
-            <Card
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 3,
-                color: 'white',
-                boxShadow: 'none',
-              }}
-            >
-            <CardContent sx={{ py: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
-                    إجمالي المدفوعات
-                  </Typography>
-                  <Typography variant="h5" fontWeight={900}>
-                    {formatCurrency(totalPayments)}
-                  </Typography>
-                </Box>
-                <Avatar
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    width: { xs: 40, sm: 50 },
-                    height: { xs: 40, sm: 50 },
-                    flexShrink: 0,
-                    marginLeft: { xs: '16px', sm: '24px' },
-                  }}
-                >
-                  <PaymentIcon sx={{ fontSize: 28 }} />
-                </Avatar>
-              </Stack>
-            </CardContent>
-          </Card>
+        <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="بحث في المدفوعات..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" sx={{ color: "var(--ink-faint)" }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "var(--panel)" } }}
+          />
+          <div className="filter-scroll">
+            {METHOD_FILTERS.map((tab) => (
+              <FilterChip
+                key={tab.id}
+                label={tab.label}
+                active={methodFilter === tab.id}
+                onClick={() => setMethodFilter(tab.id)}
+              />
+            ))}
+          </div>
+        </section>
 
-          {/* Search & Filter */}
-          <Stack spacing={2} sx={{ mt: 2.5 }}>
-            <TextField
-              fullWidth
-              placeholder="ابحث عن دفعة..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255,255,255,0.95)',
-                  borderRadius: 3,
-                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
-                  '& fieldset': { border: 'none' },
-                  '&:hover': { bgcolor: 'white' },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormControl fullWidth size="small">
-              <Select
-                value={methodFilter}
-                onChange={(e) => setMethodFilter(e.target.value)}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.95)',
-                  borderRadius: 3,
-                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
-                  '& fieldset': { border: 'none' },
+        <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {filteredPayments.length === 0 ? (
+            <div className="widget-tile" style={{ padding: "40px 24px", textAlign: "center" }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  margin: "0 auto 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "var(--radius-md)",
+                  background: "var(--pastel-green-bg)",
+                  color: "var(--pastel-green-fg)",
+                  border: "1px solid var(--line)",
                 }}
               >
-                <MenuItem value="all">كل طرق الدفع</MenuItem>
-                <MenuItem value="cash">💵 نقدي</MenuItem>
-                <MenuItem value="bank_transfer">🏦 تحويل بنكي</MenuItem>
-                <MenuItem value="check">📝 شيك</MenuItem>
-                <MenuItem value="credit_card">💳 بطاقة ائتمان</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        </Container>
-      </Box>
-
-      {/* Payments List */}
-      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
-        <Stack spacing={3.5}>
-          {filteredPayments.length === 0 ? (
-            <Card sx={{ borderRadius: 2.5, textAlign: 'center', py: 6, bgcolor: 'background.paper' }}>
-              <PaymentIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.3, mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                لا توجد مدفوعات
-              </Typography>
-              <Button
-                variant="contained"
-                color="success"
-                startIcon={<Add />}
-                onClick={() => handleOpenDialog()}
-                sx={{ mt: 2, borderRadius: 2 }}
-              >
-                إضافة أول دفعة
-              </Button>
-            </Card>
+                <Payments sx={{ fontSize: 28 }} />
+              </div>
+              <div style={{ fontWeight: 700, color: "var(--ink)" }}>لا توجد مدفوعات</div>
+              <div style={{ marginTop: 4, fontSize: "0.75rem", color: "var(--ink-muted)" }}>
+                {searchQuery || methodFilter !== "all"
+                  ? "لا نتائج مطابقة — جرّب بحثاً آخر."
+                  : "المدفوعات ستظهر هنا فور إضافتها."}
+              </div>
+              {!searchQuery && methodFilter === "all" ? (
+                <div style={{ marginTop: 16 }}>
+                  <HeroCtaButton onClick={() => handleOpenDialog()}>دفعة جديدة</HeroCtaButton>
+                </div>
+              ) : null}
+            </div>
           ) : (
             filteredPayments.map((payment) => {
+              const clientName = getClientName(payment, clients, invoices);
               const invoice = invoices.find((i) => i.id === payment.invoiceId);
-              const client = clients.find((c) => c.id === payment.clientId);
-              
               return (
-                <Card
+                <div
                   key={payment.id}
-                  sx={{
-                    borderRadius: 2.5,
-                    boxShadow: theme.palette.mode === 'light'
-                      ? '0 2px 8px rgba(0,0,0,0.06)'
-                      : '0 2px 8px rgba(0,0,0,0.3)',
-                    bgcolor: 'background.paper',
-                    border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                  className="widget-tile"
+                  style={{
+                    padding: "16px",
+                    borderInlineEndWidth: 3,
+                    borderInlineEndColor: "var(--pastel-green-fg)",
                   }}
                 >
-                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                    <Stack direction="row" alignItems="flex-start" spacing={0}>
-                      <Avatar
-                        sx={{
-                          bgcolor: 'success.light',
-                          width: { xs: 40, sm: 48 },
-                          height: { xs: 40, sm: 48 },
-                          flexShrink: 0,
-                          marginLeft: { xs: '12px', sm: '24px' },
-                        }}
-                      >
-                        <PaymentIcon sx={{ color: 'success.main', fontSize: 20 }} />
-                      </Avatar>
-                      
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1.5 }}>
-                          <Typography variant="body2" fontWeight={700} noWrap>
-                            {client?.name}
-                          </Typography>
-                          <Chip
-                            label={getPaymentMethodLabel(payment.paymentMethod)}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            sx={{ height: 20, fontSize: '0.65rem' }}
-                          />
-                        </Stack>
-                        
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-                          {payment.invoiceId && invoice ? `${invoice.invoiceNumber} • ` : ''}{dayjs(payment.paymentDate).format('DD/MM/YYYY')}
-                        </Typography>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {clientName}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.7rem", color: "var(--ink-muted)" }}>
+                          <CalendarToday sx={{ fontSize: 12 }} />
+                          {formatDate(payment.paymentDate)}
+                        </span>
+                        <span className="status-badge" style={{ background: "var(--accent-soft)", color: "var(--accent-text)" }}>
+                          {methodLabel(payment.paymentMethod)}
+                        </span>
+                        {invoice ? (
+                          <span style={{ fontSize: "0.65rem", color: "var(--ink-faint)", fontWeight: 700 }}>
+                            #{invoice.invoiceNumber}
+                          </span>
+                        ) : null}
+                      </div>
+                      {payment.notes ? (
+                        <div style={{ marginTop: 6, fontSize: "0.65rem", color: "var(--ink-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {payment.notes}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="num" style={{ flexShrink: 0, fontSize: "1rem", fontWeight: 800, color: "var(--pastel-green-fg)" }}>
+                      {formatCurrency(payment.amount)}
+                    </div>
+                  </div>
 
-                        <Typography 
-                          variant="h6" 
-                          fontWeight={800}
-                          color="success.main"
-                        >
-                          {formatCurrency(payment.amount)}
-                        </Typography>
-                      </Box>
-
-                      <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(payment)}
-                          sx={{ 
-                            color: 'primary.main',
-                            width: 32,
-                            height: 32,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                          }}
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(payment.id)}
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            bgcolor: 'rgba(211, 47, 47, 0.1)',
-                          }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    </Stack>
-
-                    {payment.notes && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          mt: 1,
-                          fontStyle: "italic",
-                          lineHeight: 1.6,
-                          px: 1,
-                          py: 0.5,
-                          bgcolor:
-                            theme.palette.mode === "dark"
-                              ? "rgba(255,255,255,0.05)"
-                              : "rgba(0,0,0,0.03)",
-                          borderRadius: 1,
-                          borderRight: `2px solid ${theme.palette.success.main}`,
-                        }}
-                      >
-                        💬 {payment.notes}
-                        </Typography>
-                    )}
-                  </CardContent>
-                </Card>
+                  <RowActionBar>
+                    <RowActionButton variant="edit" onClick={() => handleOpenDialog(payment)} />
+                    <RowActionButton variant="delete" onClick={() => handleDelete(payment)} />
+                  </RowActionBar>
+                </div>
               );
             })
           )}
-        </Stack>
-      </Container>
+        </section>
+      </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        fullScreen
-        sx={{
-          '& .MuiDialog-paper': {
-            bgcolor: theme.palette.mode === 'dark' ? '#0f1a2e' : '#f4f6f9',
-          },
-        }}
-      >
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit(onSubmit)}>
-            <Box
-              sx={{
-                background: theme.palette.mode === 'light' 
-                  ? 'linear-gradient(160deg, #0d7a54 0%, #0d9668 100%)'
-                  : 'linear-gradient(160deg, #087a54 0%, #0d9668 100%)',
-                color: 'white',
-                p: 2,
-              }}
-            >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <IconButton onClick={handleCloseDialog} sx={{ color: 'white' }}>
-                <ArrowBack />
-              </IconButton>
-              <Typography variant="h6" fontWeight={700}>
-                {editingPayment ? 'تعديل دفعة' : 'إضافة دفعة جديدة'}
-              </Typography>
-            </Stack>
-          </Box>
-
-          <Box sx={{ p: 3.5 }}>
-            <Stack spacing={3}>
+          <DialogTitle sx={{ fontWeight: 800 }}>
+            {editingPayment ? "تعديل الدفعة" : "دفعة جديدة"}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
               <Controller
                 name="clientId"
                 control={control}
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.clientId}>
                     <InputLabel>العميل</InputLabel>
-                    <Select {...field} label="العميل" sx={{ borderRadius: 2 }}>
+                    <Select {...field} label="العميل">
                       {clients.map((client) => (
                         <MenuItem key={client.id} value={client.id}>
-                          {client.name} - {client.phone}
+                          {client.name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -562,27 +386,18 @@ export const PaymentsPage = () => {
                 name="invoiceId"
                 control={control}
                 render={({ field }) => {
-                  const selectedClientId = watch('clientId');
+                  const selectedClientId = watch("clientId");
                   const clientInvoices = selectedClientId
-                    ? invoices.filter(
-                        (inv) => inv.clientId === selectedClientId && inv.status !== 'paid'
-                      )
+                    ? invoices.filter((inv) => inv.clientId === selectedClientId && inv.status !== "paid")
                     : [];
-                  
                   return (
                     <FormControl fullWidth disabled={!selectedClientId}>
                       <InputLabel>الفاتورة (اختياري)</InputLabel>
-                      <Select 
-                        {...field} 
-                        value={field.value || ''}
-                        label="الفاتورة (اختياري)" 
-                        sx={{ borderRadius: 2 }}
-                        onChange={(e) => field.onChange(e.target.value || undefined)}
-                      >
+                      <Select {...field} value={field.value || ""} label="الفاتورة (اختياري)" onChange={(e) => field.onChange(e.target.value || undefined)}>
                         <MenuItem value="">بدون فاتورة</MenuItem>
-                        {clientInvoices.map((invoice) => (
-                          <MenuItem key={invoice.id} value={invoice.id}>
-                            {invoice.invoiceNumber} - {formatCurrency(invoice.total)}
+                        {clientInvoices.map((inv) => (
+                          <MenuItem key={inv.id} value={inv.id}>
+                            {inv.invoiceNumber} — {formatCurrency(inv.total)}
                           </MenuItem>
                         ))}
                       </Select>
@@ -602,7 +417,6 @@ export const PaymentsPage = () => {
                     type="number"
                     error={!!errors.amount}
                     helperText={errors.amount?.message}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   />
                 )}
@@ -614,11 +428,11 @@ export const PaymentsPage = () => {
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>طريقة الدفع</InputLabel>
-                    <Select {...field} label="طريقة الدفع" sx={{ borderRadius: 2 }}>
-                      <MenuItem value="cash">💵 نقدي</MenuItem>
-                      <MenuItem value="bank_transfer">🏦 تحويل بنكي</MenuItem>
-                      <MenuItem value="check">📝 شيك</MenuItem>
-                      <MenuItem value="credit_card">💳 بطاقة ائتمان</MenuItem>
+                    <Select {...field} label="طريقة الدفع">
+                      <MenuItem value="cash">نقدي</MenuItem>
+                      <MenuItem value="bank_transfer">تحويل بنكي</MenuItem>
+                      <MenuItem value="check">شيك</MenuItem>
+                      <MenuItem value="credit_card">بطاقة ائتمان</MenuItem>
                     </Select>
                   </FormControl>
                 )}
@@ -628,14 +442,7 @@ export const PaymentsPage = () => {
                 name="paymentDate"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="تاريخ الدفع"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
+                  <TextField {...field} fullWidth label="تاريخ الدفع" type="date" InputLabelProps={{ shrink: true }} />
                 )}
               />
 
@@ -643,58 +450,21 @@ export const PaymentsPage = () => {
                 name="notes"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="ملاحظات"
-                    multiline
-                    rows={3}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
+                  <TextField {...field} fullWidth label="ملاحظات" multiline rows={2} />
                 )}
               />
             </Stack>
-
-            <Stack direction="row" spacing={2} sx={{ mt: 5 }}>
-              <Button
-                onClick={handleCloseDialog}
-                fullWidth
-                size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="success"
-                fullWidth
-                size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
-              >
-                {editingPayment ? 'حفظ' : 'إضافة'}
-              </Button>
-            </Stack>
-          </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button onClick={handleCloseDialog} disabled={saving}>
+              إلغاء
+            </Button>
+            <Button type="submit" variant="contained" color="success" disabled={saving} sx={{ fontWeight: 800, minWidth: 100 }}>
+              {saving ? "جاري الحفظ..." : editingPayment ? "حفظ" : "إضافة"}
+            </Button>
+          </DialogActions>
         </form>
       </Dialog>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarMessage.includes('خطأ') ? 'error' : 'success'}
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </>
   );
 };
-

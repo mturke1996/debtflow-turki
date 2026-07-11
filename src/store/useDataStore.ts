@@ -12,6 +12,11 @@ import type {
   DebtParty,
 } from "../types";
 import {
+  cascadeDeleteClient,
+  cascadeDeleteInvoice,
+  cascadeDeleteDebtParty,
+} from "@/services/cascadeDelete";
+import {
   clientsService,
   invoicesService,
   paymentsService,
@@ -23,6 +28,7 @@ import {
   debtPartiesService,
   closeExpensesAndCreateInvoice as closeExpensesAndCreateInvoiceService,
 } from "../services/firebaseService";
+import { restoreBackupToFirestore } from "../services/backupService";
 
 interface DataState {
   // Data
@@ -110,6 +116,10 @@ interface DataState {
 
   // Utility
   clearError: () => void;
+  restoreFromBackup: (
+    data: Partial<import("../services/backupService").BackupData>,
+    onProgress?: (label: string, percent: number) => void
+  ) => Promise<import("../services/backupService").RestoreResult>;
 }
 
 export const useDataStore = create<DataState>()(
@@ -196,11 +206,6 @@ export const useDataStore = create<DataState>()(
         });
 
         const unsubscribePayments = paymentsService.subscribe((payments) => {
-          console.log(
-            "Payments subscription updated:",
-            payments.length,
-            "payments"
-          );
           set({ payments });
         });
 
@@ -213,11 +218,6 @@ export const useDataStore = create<DataState>()(
         });
 
         const unsubscribeExpenses = expensesService.subscribe((expenses) => {
-          console.log(
-            "Expenses subscription updated:",
-            expenses.length,
-            "expenses"
-          );
           set({ expenses });
         });
 
@@ -289,11 +289,9 @@ export const useDataStore = create<DataState>()(
       deleteClient: async (id: string) => {
         try {
           set({ isLoading: true });
-          await clientsService.delete(id);
-          set((state) => ({
-            clients: state.clients.filter((c) => c.id !== id),
-            isLoading: false,
-          }));
+          const snap = get();
+          await cascadeDeleteClient(id, snap);
+          set({ isLoading: false });
         } catch (error) {
           console.error("Error deleting client:", error);
           set({ error: "حدث خطأ أثناء حذف العميل", isLoading: false });
@@ -307,17 +305,14 @@ export const useDataStore = create<DataState>()(
       addInvoice: async (invoice: Invoice) => {
         try {
           set({ isLoading: true });
-          const id = await invoicesService.add(invoice);
-          set((state) => ({
-            invoices: [...state.invoices, { ...invoice, id }],
-            isLoading: false,
-          }));
+          const { id: _localId, ...invoiceData } = invoice;
+          const firestoreId = await invoicesService.add(invoiceData as Omit<Invoice, "id">);
+          set({ isLoading: false });
 
-          // Auto-create debt for invoice
           const debt: Debt = {
             id: crypto.randomUUID(),
             clientId: invoice.clientId,
-            invoiceId: id,
+            invoiceId: firestoreId,
             totalAmount: invoice.total,
             paidAmount: 0,
             remainingAmount: invoice.total,
@@ -354,11 +349,8 @@ export const useDataStore = create<DataState>()(
       deleteInvoice: async (id: string) => {
         try {
           set({ isLoading: true });
-          await invoicesService.delete(id);
-          set((state) => ({
-            invoices: state.invoices.filter((i) => i.id !== id),
-            isLoading: false,
-          }));
+          await cascadeDeleteInvoice(id, get());
+          set({ isLoading: false });
         } catch (error) {
           console.error("Error deleting invoice:", error);
           set({ error: "حدث خطأ أثناء حذف الفاتورة", isLoading: false });
@@ -438,12 +430,8 @@ export const useDataStore = create<DataState>()(
 
       deletePayment: async (id: string) => {
         try {
-          console.log("deletePayment called with id:", id);
           set({ isLoading: true });
           await paymentsService.delete(id);
-          console.log(
-            "Payment deleted from Firebase, waiting for subscription update..."
-          );
           // لا نحدث الـ state محلياً - سيأتي من Firebase تلقائياً عبر real-time subscription
           set({ isLoading: false });
         } catch (error) {
@@ -588,12 +576,8 @@ export const useDataStore = create<DataState>()(
 
       deleteExpense: async (id: string) => {
         try {
-          console.log("deleteExpense called with id:", id);
           set({ isLoading: true });
           await expensesService.delete(id);
-          console.log(
-            "Expense deleted from Firebase, waiting for subscription update..."
-          );
           // لا نحدث الـ state محلياً - سيأتي من Firebase تلقائياً عبر real-time subscription
           set({ isLoading: false });
         } catch (error) {
@@ -685,7 +669,7 @@ export const useDataStore = create<DataState>()(
       deleteDebtParty: async (id: string) => {
         try {
           set({ isLoading: true });
-          await debtPartiesService.delete(id);
+          await cascadeDeleteDebtParty(id, get());
           set({ isLoading: false });
         } catch (error) {
           console.error("Error deleting debt party:", error);
@@ -735,6 +719,22 @@ export const useDataStore = create<DataState>()(
 
       setExpenseInvoices: (expenseInvoices: ExpenseInvoice[]) =>
         set({ expenseInvoices }),
+
+      restoreFromBackup: async (data, onProgress) => {
+        try {
+          set({ isLoading: true, error: null });
+          const result = await restoreBackupToFirestore(data, onProgress);
+          set({ isLoading: false });
+          return result;
+        } catch (error) {
+          console.error("Error restoring backup:", error);
+          set({
+            error: "حدث خطأ أثناء استعادة النسخة الاحتياطية",
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
 
       // Utility
       clearError: () => set({ error: null }),

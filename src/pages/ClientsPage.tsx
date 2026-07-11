@@ -10,6 +10,7 @@ import {
   Chip,
   IconButton,
   Dialog,
+  DialogTitle,
   FormControl,
   InputLabel,
   Select,
@@ -26,7 +27,6 @@ import {
   Business,
   Person,
   ChevronLeft,
-  ArrowBack,
   People,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +36,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Client } from '@/types';
 import { Phone } from '@mui/icons-material';
+import { ListPageLayout } from '@/components/ui/ListPageLayout';
+import { SearchField } from '@/components/ui/SearchField';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AppCard } from '@/components/ui/AppCard';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
@@ -140,153 +144,43 @@ export const ClientsPage = () => {
 
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(180deg, #0c1524 0%, #0f1a2e 100%)' 
-          : 'linear-gradient(180deg, #f4f6f9 0%, #eef1f6 100%)',
-        pb: 3,
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          background: theme.palette.mode === 'light' 
-            ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
-            : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
-          pt: 3,
-          pb: 4,
-          px: 2,
-          borderRadius: '0 0 28px 28px',
-          boxShadow: theme.palette.mode === 'light' 
-            ? '0 8px 32px -8px rgba(26, 58, 92, 0.3)'
-            : '0 8px 32px -8px rgba(0, 0, 0, 0.4)',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(ellipse at 70% 20%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
-            pointerEvents: 'none',
-          },
-        }}
-      >
-        <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <IconButton onClick={() => navigate('/')} sx={{ color: 'rgba(255,255,255,0.9)', marginLeft: '8px', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-              <ArrowBack />
-            </IconButton>
-            <Typography variant="h5" fontWeight={800} sx={{ color: 'white', flexGrow: 1, letterSpacing: 0.3 }}>
-              العملاء ({clients.length})
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => handleOpenDialog()}
-              sx={{
-                bgcolor: 'rgba(201, 165, 78, 0.9)',
-                color: '#1a2a3e',
-                fontWeight: 700,
-                '&:hover': { 
-                  bgcolor: '#c9a54e',
-                  transform: 'scale(1.04)',
-                },
-                borderRadius: 2.5,
-                px: 2.5,
-                boxShadow: '0 4px 14px -3px rgba(201, 165, 78, 0.4)',
-                transition: 'all 0.25s ease',
-              }}
-              startIcon={<Add />}
-            >
-              جديد
-            </Button>
-          </Stack>
-
-          {/* Search */}
-          <TextField
-            fullWidth
-            placeholder="ابحث عن عميل بالاسم أو الهاتف..."
+    <>
+      <ListPageLayout
+        kicker="السجلات"
+        title={`العملاء (${clients.length})`}
+        subtitle="إدارة بطاقات العملاء والأرصدة"
+        maxWidth="md"
+        action={
+          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
+            عميل جديد
+          </Button>
+        }
+        filters={
+          <SearchField
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              mt: 2.5,
-              mb: 1,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'rgba(255,255,255,0.95)',
-                borderRadius: 3,
-                boxShadow: '0 4px 16px -4px rgba(0,0,0,0.12)',
-                '& fieldset': { border: 'none' },
-                '&:hover': {
-                  bgcolor: 'white',
-                },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ color: 'text.secondary', opacity: 0.6 }} />
-                </InputAdornment>
-              ),
-            }}
+            onChange={setSearchQuery}
+            placeholder="ابحث بالاسم أو الهاتف أو البريد..."
           />
-        </Container>
-      </Box>
-
-      {/* Clients List */}
-      <Container maxWidth="sm" sx={{ mt: 1, pt: 1 }}>
+        }
+      >
         <Stack spacing={2}>
           {filteredClients.length === 0 ? (
-            <Card sx={{ borderRadius: 3, textAlign: 'center', py: 6, bgcolor: 'background.paper' }}>
-              <People sx={{ fontSize: 56, color: 'text.secondary', opacity: 0.2, mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
-                لا يوجد عملاء
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => handleOpenDialog()}
-                sx={{ 
-                  mt: 2, 
-                  borderRadius: 2.5,
-                  bgcolor: '#1a3a5c',
-                  '&:hover': { bgcolor: '#0e2440' },
-                  boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
-                }}
-              >
-                إضافة أول عميل
-              </Button>
-            </Card>
+            <EmptyState
+              icon={People}
+              title="لا يوجد عملاء"
+              description="ابدأ بإضافة أول عميل لتتبع الفواتير والمدفوعات."
+              actionLabel="إضافة عميل"
+              onAction={() => handleOpenDialog()}
+            />
           ) : (
-            filteredClients.map((client) => {
-              return (
-                <Card
-                  key={client.id}
-                  onClick={() => navigate(`/clients/${client.id}`)}
-                  sx={{
-                    borderRadius: 3,
-                    boxShadow: theme.palette.mode === 'light'
-                      ? '0 2px 12px -2px rgba(26, 58, 92, 0.07)'
-                      : '0 4px 20px rgba(0,0,0,0.35)',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                    bgcolor: 'background.paper',
-                    border: theme.palette.mode === 'dark' ? '1px solid rgba(90, 143, 196, 0.08)' : '1px solid rgba(26, 58, 92, 0.04)',
-                    '&:hover': {
-                      boxShadow: theme.palette.mode === 'light'
-                        ? '0 10px 32px -6px rgba(26, 58, 92, 0.12)'
-                        : '0 12px 40px rgba(0,0,0,0.45)',
-                      transform: 'translateY(-3px)',
-                    },
-                    '&:active': {
-                      transform: 'scale(0.98)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ p: 2.5 }}>
+            filteredClients.map((client) => (
+              <AppCard
+                key={client.id}
+                hover
+                padding={2}
+                onClick={() => navigate(`/clients/${client.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
                     <Stack direction="row" alignItems="center" spacing={0}>
                       {/* Avatar */}
                       <Avatar
@@ -407,56 +301,17 @@ export const ClientsPage = () => {
                         </IconButton>
                       </Stack>
                     </Stack>
-                  </CardContent>
-                </Card>
-              );
-            })
+              </AppCard>
+            ))
           )}
         </Stack>
-      </Container>
+      </ListPageLayout>
 
-      {/* Add/Edit Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={handleCloseDialog} 
-        fullScreen
-        sx={{
-          '& .MuiDialog-paper': {
-            bgcolor: theme.palette.mode === 'dark' ? '#0f1a2e' : '#f4f6f9',
-          },
-        }}
-      >
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} fullScreen>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box
-            sx={{
-              background: theme.palette.mode === 'light' 
-                ? 'linear-gradient(160deg, #1a3a5c 0%, #2d5f8a 100%)'
-                : 'linear-gradient(160deg, #162a44 0%, #1a3a5c 100%)',
-              color: 'white',
-              p: 2,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'radial-gradient(ellipse at 70% 50%, rgba(201, 165, 78, 0.08) 0%, transparent 50%)',
-                pointerEvents: 'none',
-              },
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
-              <IconButton onClick={handleCloseDialog} sx={{ color: 'rgba(255,255,255,0.9)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                <ArrowBack />
-              </IconButton>
-              <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 0.3 }}>
-                {editingClient ? 'تعديل عميل' : 'إضافة عميل جديد'}
-              </Typography>
-            </Stack>
-          </Box>
+          <DialogTitle sx={{ fontWeight: 800 }}>
+            {editingClient ? 'تعديل عميل' : 'إضافة عميل جديد'}
+          </DialogTitle>
 
           <Box sx={{ p: 3.5 }}>
             <Stack spacing={3}>
@@ -554,29 +409,13 @@ export const ClientsPage = () => {
               >
                 إلغاء
               </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                sx={{ 
-                  borderRadius: 2.5, 
-                  py: 1.5,
-                  bgcolor: '#1a3a5c',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
-                  '&:hover': {
-                    bgcolor: '#0e2440',
-                    boxShadow: '0 8px 22px -4px rgba(26, 58, 92, 0.4)',
-                  },
-                }}
-              >
+              <Button type="submit" variant="contained" fullWidth size="large" sx={{ borderRadius: 2, py: 1.5 }}>
                 {editingClient ? 'حفظ التعديلات' : 'إضافة العميل'}
               </Button>
             </Stack>
           </Box>
         </form>
       </Dialog>
-    </Box>
+    </>
   );
 };

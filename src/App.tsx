@@ -12,7 +12,10 @@ import { createAppTheme } from "./theme";
 import { useThemeStore } from "./store/useThemeStore";
 import { useAuthStore } from "./store/useAuthStore";
 import { useDataStore } from "./store/useDataStore";
+import { subscribeUserCategories } from "./services/categorySync";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Layout } from "./components/Layout";
+import { ConfirmProvider } from "./components/ui/ConfirmDialog";
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() =>
@@ -36,6 +39,16 @@ const InvoicesPage = lazy(() =>
     default: module.InvoicesPage,
   }))
 );
+const NewInvoicePage = lazy(() =>
+  import("./pages/NewInvoicePage").then((module) => ({
+    default: module.NewInvoicePage,
+  }))
+);
+const InvoiceDetailsPage = lazy(() =>
+  import("./pages/InvoiceDetailsPage").then((module) => ({
+    default: module.InvoiceDetailsPage,
+  }))
+);
 const PaymentsPage = lazy(() =>
   import("./pages/PaymentsPage").then((module) => ({
     default: module.PaymentsPage,
@@ -47,6 +60,16 @@ const DebtsPage = lazy(() =>
 const ExpenseInvoicesPage = lazy(() =>
   import("./pages/ExpenseInvoicesPage").then((module) => ({
     default: module.ExpenseInvoicesPage,
+  }))
+);
+const ExpensesPage = lazy(() =>
+  import("./pages/ExpensesPage").then((module) => ({
+    default: module.ExpensesPage,
+  }))
+);
+const BackupPage = lazy(() =>
+  import("./pages/BackupPage").then((module) => ({
+    default: module.BackupPage,
   }))
 );
 
@@ -79,6 +102,7 @@ const LoadingFallback = () => (
 function App() {
   const themeMode = useThemeStore((state) => state.mode);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const { initialized, initializeData, subscribeToRealtimeUpdates } =
     useDataStore();
 
@@ -89,12 +113,10 @@ function App() {
   useEffect(() => {
     if (isAuthenticated && !initialized) {
       initializeData().then(() => {
-        // Subscribe to real-time updates after data is initialized
         subscribeToRealtimeUpdates();
       });
     }
 
-    // Cleanup on unmount or when user logs out
     return () => {
       if (!isAuthenticated) {
         const { unsubscribeFunctions } = useDataStore.getState();
@@ -111,21 +133,31 @@ function App() {
     subscribeToRealtimeUpdates,
   ]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    const unsub = subscribeUserCategories(user.id);
+    return unsub;
+  }, [isAuthenticated, user?.id]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <ConfirmProvider>
         <Toaster
           position="top-center"
           toastOptions={{
             duration: 3000,
             style: {
-              background: themeMode === 'dark' ? '#1e293b' : '#ffffff',
-              color: themeMode === 'dark' ? '#f1f5f9' : '#0f172a',
-              borderRadius: '12px',
-              padding: '16px',
+              background: 'var(--panel)',
+              color: 'var(--ink)',
+              borderRadius: '8px',
+              padding: '12px 16px',
               fontFamily: 'Cairo, sans-serif',
               fontWeight: 600,
+              fontSize: '0.8125rem',
+              border: '1px solid var(--line)',
+              boxShadow: 'var(--shadow-soft)',
             },
             success: {
               iconTheme: {
@@ -144,7 +176,6 @@ function App() {
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              {/* Public Routes */}
               <Route
                 path="/login"
                 element={
@@ -152,69 +183,31 @@ function App() {
                 }
               />
 
-              {/* Protected Routes */}
               <Route
-                path="/"
                 element={
                   <ProtectedRoute>
-                    <HomePage />
+                    <Layout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/clients"
-                element={
-                  <ProtectedRoute>
-                    <ClientsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/clients/:clientId"
-                element={
-                  <ProtectedRoute>
-                    <ClientProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/invoices"
-                element={
-                  <ProtectedRoute>
-                    <InvoicesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payments"
-                element={
-                  <ProtectedRoute>
-                    <PaymentsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/debts"
-                element={
-                  <ProtectedRoute>
-                    <DebtsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/expense-invoices"
-                element={
-                  <ProtectedRoute>
-                    <ExpenseInvoicesPage />
-                  </ProtectedRoute>
-                }
-              />
+              >
+                <Route path="/" element={<HomePage />} />
+                <Route path="/clients" element={<ClientsPage />} />
+                <Route path="/clients/:clientId" element={<ClientProfilePage />} />
+                <Route path="/invoices" element={<InvoicesPage />} />
+                <Route path="/invoices/new" element={<NewInvoicePage />} />
+                <Route path="/invoices/:id" element={<InvoiceDetailsPage />} />
+                <Route path="/payments" element={<PaymentsPage />} />
+                <Route path="/debts" element={<DebtsPage />} />
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/expense-invoices" element={<ExpenseInvoicesPage />} />
+                <Route path="/backup" element={<BackupPage />} />
+              </Route>
 
-              {/* Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
+        </ConfirmProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -21,6 +21,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/ar';
 import type { Expense } from '@/types';
 import { formatCurrency } from '@/utils/calculations';
+import { normalizeCategoryLabel } from '@/constants/expenseCategories';
 
 dayjs.locale('ar');
 
@@ -189,7 +190,7 @@ export const CloseExpensesDialog = ({
                             {expense.description}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {dayjs(expense.date).format('YYYY-MM-DD')} • {expense.category}
+                            {dayjs(expense.date).format('YYYY-MM-DD')} • {normalizeCategoryLabel(expense.category)}
                           </Typography>
                         </Box>
                         <Typography variant="body2" fontWeight="bold" color="primary">

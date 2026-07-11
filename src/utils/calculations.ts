@@ -1,22 +1,19 @@
-import type { Invoice, Payment, Debt, FinancialSummary, MonthlyData } from '../types';
+import type { Invoice, Payment, Debt, StandaloneDebt, FinancialSummary, MonthlyData } from '../types';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
+import { calculateStandaloneDebtTotals } from './standaloneDebts';
 
-// تعيين اللغة العربية
 dayjs.locale('ar');
 
 export const formatCurrency = (amount: number): string => {
-  // تنسيق بسيط - يعرض الخانات العشرية فقط إذا كانت موجودة
   let formatted: string;
-  
+
   if (amount % 1 === 0) {
-    // رقم صحيح - بدون خانات عشرية
     formatted = amount.toString();
   } else {
-    // رقم عشري - نعرض حتى 3 خانات
     formatted = amount.toFixed(3).replace(/\.?0+$/, '');
   }
-  
+
   return `${formatted} د.ل`;
 };
 
@@ -31,25 +28,24 @@ export const calculateInvoiceTotal = (
   return { subtotal, taxAmount, total };
 };
 
+/**
+ * ملخص مالي للفواتير والتحصيل.
+ * «إجمالي الديون» و«المتبقي» من standaloneDebts فقط (قسم الديون).
+ * ديون الفواتير (debts collection) لا تدخل في بطاقات الديون.
+ */
 export const calculateFinancialSummary = (
   invoices: Invoice[],
   payments: Payment[],
-  debts: Debt[]
+  standaloneDebts: StandaloneDebt[] = []
 ): FinancialSummary => {
-  const totalDebt = invoices.reduce((sum, inv) => sum + inv.total, 0);
+  const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.total, 0);
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const totalRemaining = debts.reduce((sum, debt) => sum + debt.remainingAmount, 0);
 
-  const overdueDebts = debts.filter(
-    (debt) =>
-      debt.status !== 'paid' &&
-      dayjs(debt.dueDate).isBefore(dayjs(), 'day')
-  );
-  const overdueAmount = overdueDebts.reduce((sum, debt) => sum + debt.remainingAmount, 0);
+  const { totalRemaining, totalAmount: totalDebt } =
+    calculateStandaloneDebtTotals(standaloneDebts);
 
-  const collectionRate = totalDebt > 0 ? (totalPaid / totalDebt) * 100 : 0;
+  const collectionRate = totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0;
 
-  // Calculate monthly data
   const monthlyMap = new Map<string, MonthlyData>();
 
   invoices.forEach((invoice) => {
@@ -80,19 +76,6 @@ export const calculateFinancialSummary = (
     }
   });
 
-  debts.forEach((debt) => {
-    const invoice = invoices.find((inv) => inv.id === debt.invoiceId);
-    if (invoice) {
-      const date = dayjs(invoice.issueDate);
-      const key = `${date.year()}-${date.month()}`;
-
-      if (monthlyMap.has(key)) {
-        const monthData = monthlyMap.get(key)!;
-        monthData.totalDebt += debt.remainingAmount;
-      }
-    }
-  });
-
   const monthlyData = Array.from(monthlyMap.values()).sort((a, b) => {
     if (a.year !== b.year) return a.year - b.year;
     return a.month - b.month;
@@ -102,7 +85,7 @@ export const calculateFinancialSummary = (
     totalDebt,
     totalPaid,
     totalRemaining,
-    overdueAmount,
+    overdueAmount: 0,
     collectionRate,
     monthlyData,
   };
@@ -118,4 +101,3 @@ export const calculateDebtProgress = (totalAmount: number, paidAmount: number): 
   if (totalAmount === 0) return 0;
   return (paidAmount / totalAmount) * 100;
 };
-

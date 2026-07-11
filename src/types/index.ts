@@ -33,15 +33,19 @@ export interface Invoice {
   invoiceNumber: string;
   clientId: string;
   projectId?: string;
+  tempClientName?: string;
+  tempClientPhone?: string;
+  tempClientAddress?: string;
   items: InvoiceItem[];
   subtotal: number;
   taxRate: number;
   taxAmount: number;
   total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'partially_paid';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'partially_paid' | 'cancelled';
   issueDate: string;
   dueDate: string;
   notes?: string;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -112,9 +116,20 @@ export interface Expense {
   category: string;
   date: string;
   notes?: string;
+  quantity?: number;
+  unitPrice?: number;
+  unit?: string;
   isClosed: boolean; // هل تم إغلاق المصروف في فاتورة
   closedAt?: string; // تاريخ الإغلاق
   expenseInvoiceId?: string; // معرف فاتورة المصروفات المرتبطة
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomExpenseCategory {
+  id: string;
+  name: string;
+  userId: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,12 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
-  Container,
-  Typography,
   Chip,
   IconButton,
   Table,
@@ -15,16 +10,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Stack,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Typography,
+  Paper,
 } from '@mui/material';
 import {
-  ArrowBack,
   PictureAsPdf,
   WhatsApp,
   Visibility,
@@ -32,10 +26,16 @@ import {
   Send,
   Schedule,
   Share,
+  Receipt,
 } from '@mui/icons-material';
 import { useDataStore } from '@/store/useDataStore';
 import { formatCurrency } from '@/utils/calculations';
-import { generateExpenseInvoicePDF, generateExpenseInvoicesSummaryPDF } from '@/utils/pdfGenerator';
+import { downloadPdf } from '@/utils/pdfService';
+import { loadStyledPDFs } from '@/components/pdf/lazyPdf';
+import { ListPageLayout } from '@/components/ui/ListPageLayout';
+import { normalizeCategoryLabel } from '@/constants/expenseCategories';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AppCard } from '@/components/ui/AppCard';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
 import type { ExpenseInvoice } from '@/types';
@@ -43,13 +43,16 @@ import type { ExpenseInvoice } from '@/types';
 dayjs.locale('ar');
 
 export const ExpenseInvoicesPage = () => {
-  const navigate = useNavigate();
   const { expenseInvoices, clients, payments, getExpenseInvoices } = useDataStore();
   const [selectedInvoice, setSelectedInvoice] = useState<ExpenseInvoice | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
-  const handleShareTotal = () => {
-    generateExpenseInvoicesSummaryPDF(expenseInvoices, clients, payments);
+  const handleShareTotal = async () => {
+    const { ExpenseInvoicesSummaryStyledPDF } = await loadStyledPDFs();
+    await downloadPdf(
+      <ExpenseInvoicesSummaryStyledPDF expenseInvoices={expenseInvoices} clients={clients} />,
+      `فواتير-مصروفات-${dayjs().format('YYYY-MM-DD')}.pdf`
+    );
   };
 
   const invoicesWithClient = useMemo(() => {
@@ -59,14 +62,17 @@ export const ExpenseInvoicesPage = () => {
     });
   }, [expenseInvoices, clients]);
 
-  const handleViewPDF = (invoice: ExpenseInvoice) => {
+  const handleViewPDF = async (invoice: ExpenseInvoice) => {
     const client = clients.find((c) => c.id === invoice.clientId);
-    if (client) {
-      generateExpenseInvoicePDF(invoice, client);
-    }
+    if (!client) return;
+    const { ExpenseInvoiceStyledPDF } = await loadStyledPDFs();
+    await downloadPdf(
+      <ExpenseInvoiceStyledPDF invoice={invoice} client={client} />,
+      `فاتورة-مصروفات-${invoice.invoiceNumber}.pdf`
+    );
   };
 
-  const handleShareWhatsApp = (invoice: ExpenseInvoice) => {
+  const handleShareWhatsApp = async (invoice: ExpenseInvoice) => {
     const client = clients.find((c) => c.id === invoice.clientId);
     if (!client) return;
 
@@ -126,43 +132,37 @@ export const ExpenseInvoicesPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
-        <IconButton onClick={() => navigate(-1)} sx={{ marginLeft: '8px' }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold" sx={{ flexGrow: 1 }}>
-          فواتير المصروفات
-        </Typography>
-        {expenseInvoices.length > 0 && (
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleShareTotal}
-            startIcon={<Share />}
-            sx={{ borderRadius: 2 }}
-          >
-            مشاركة المجموع
-          </Button>
-        )}
-      </Stack>
-
-      {invoicesWithClient.length === 0 ? (
-        <Alert severity="info">لا توجد فواتير مصروفات حتى الآن</Alert>
-      ) : (
-        <TableContainer component={Paper} elevation={2}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'primary.main' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>رقم الفاتورة</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>العميل</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>الفترة</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>عدد المصروفات</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>الإجمالي</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>الحالة</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>الإجراءات</TableCell>
-              </TableRow>
-            </TableHead>
+    <>
+      <ListPageLayout
+        kicker="المالية"
+        title="فواتير المصروفات"
+        subtitle={`${expenseInvoices.length} فاتورة في السجل`}
+        maxWidth="lg"
+        action={
+          expenseInvoices.length > 0 ? (
+            <Button variant="outlined" startIcon={<Share />} onClick={handleShareTotal}>
+              مشاركة المجموع
+            </Button>
+          ) : undefined
+        }
+      >
+        {invoicesWithClient.length === 0 ? (
+          <EmptyState icon={Receipt} title="لا توجد فواتير مصروفات حتى الآن" />
+        ) : (
+          <AppCard padding={0}>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>رقم الفاتورة</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>العميل</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>الفترة</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>عدد المصروفات</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>الإجمالي</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>الحالة</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>الإجراءات</TableCell>
+                  </TableRow>
+                </TableHead>
             <TableBody>
               {invoicesWithClient
                 .sort((a, b) => dayjs(b.invoice.issueDate).diff(dayjs(a.invoice.issueDate)))
@@ -243,7 +243,9 @@ export const ExpenseInvoicesPage = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
+          </AppCard>
+        )}
+      </ListPageLayout>
 
       {/* Preview Dialog */}
       <Dialog
@@ -315,7 +317,7 @@ export const ExpenseInvoicesPage = () => {
                               )}
                             </TableCell>
                             <TableCell>
-                              <Chip label={expense.category} size="small" color="primary" variant="outlined" />
+                              <Chip label={normalizeCategoryLabel(expense.category)} size="small" color="primary" variant="outlined" />
                             </TableCell>
                             <TableCell align="right">
                               <Typography variant="body2" fontWeight="bold" color="success.main">
@@ -361,7 +363,7 @@ export const ExpenseInvoicesPage = () => {
               onClick={() => {
                 const client = clients.find((c) => c.id === selectedInvoice.clientId);
                 if (client) {
-                  generateExpenseInvoicePDF(selectedInvoice, client);
+                  void handleViewPDF(selectedInvoice);
                 }
                 setPreviewDialogOpen(false);
               }}
@@ -371,7 +373,7 @@ export const ExpenseInvoicesPage = () => {
           )}
         </DialogActions>
       </Dialog>
-    </Container>
+    </>
   );
 };
 

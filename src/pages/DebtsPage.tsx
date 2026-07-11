@@ -31,6 +31,13 @@ import dayjs from "dayjs";
 import { useDataStore } from "@/store/useDataStore";
 import type { StandaloneDebt } from "@/types";
 import { formatCurrency } from "@/utils/calculations";
+import { ListPageLayout } from "@/components/ui/ListPageLayout";
+import { SearchField } from "@/components/ui/SearchField";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ConfirmDeleteButton } from "@/components/ui/ConfirmDeleteButton";
+import { KpiCard } from "@/components/ui/KpiCard";
+import { AppCard } from "@/components/ui/AppCard";
+import { AccountBalance, Paid, WarningAmber } from "@mui/icons-material";
 
 export const DebtsPage = () => {
   const {
@@ -124,9 +131,13 @@ export const DebtsPage = () => {
         notes: form.notes,
       });
     } else {
+      const client = clients.find((c) => c.id === form.clientId);
       const newDebt: StandaloneDebt = {
         id: crypto.randomUUID(),
         clientId: form.clientId,
+        partyId: form.clientId,
+        partyType: client?.type === "company" ? "company" : "person",
+        partyName: client?.name ?? "",
         description: form.description,
         amount,
         paidAmount: 0,
@@ -152,9 +163,7 @@ export const DebtsPage = () => {
   };
 
   const handleDelete = async (debtId: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الدين؟")) {
-      await deleteStandaloneDebt(debtId);
-    }
+    await deleteStandaloneDebt(debtId);
   };
 
   const handleOpenPayDialog = (debt: StandaloneDebt) => {
@@ -187,132 +196,67 @@ export const DebtsPage = () => {
   };
 
   return (
-    <Box sx={{ pb: 4 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        alignItems={{ xs: "flex-start", sm: "center" }}
-        justifyContent="space-between"
-        sx={{ mb: 3 }}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={800}>
-            الديون (أشخاص ومحلات)
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            إضافة، تعديل، حذف، ودفع جزء من الدين بسرعة
-          </Typography>
-        </Box>
-        <Button
-          startIcon={<Add />}
-          variant="contained"
-          onClick={() => handleOpenDialog()}
-          sx={{ 
-            borderRadius: 2.5,
-            bgcolor: '#1a3a5c',
-            fontWeight: 700,
-            boxShadow: '0 4px 14px -3px rgba(26, 58, 92, 0.35)',
-            '&:hover': {
-              bgcolor: '#0e2440',
-              boxShadow: '0 8px 22px -4px rgba(26, 58, 92, 0.4)',
-            },
-          }}
-        >
-          إضافة دين
-        </Button>
-      </Stack>
-
-      {/* Stats */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                إجمالي الديون
-              </Typography>
-              <Typography variant="h6" fontWeight={800}>
-                {formatCurrency(stats.totalAmount)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                المدفوع
-              </Typography>
-              <Typography variant="h6" fontWeight={800} color="success.main">
-                {formatCurrency(stats.totalPaid)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                المتبقي
-              </Typography>
-              <Typography variant="h6" fontWeight={800} color="warning.main">
-                {formatCurrency(stats.totalRemaining)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ xs: "stretch", sm: "center" }}
-          >
-            <TextField
-              fullWidth
-              placeholder="ابحث بالاسم، الملاحظة، أو الشخص/المحل..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              select
-              label="الحالة"
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as "all" | "active" | "paid")
-              }
-              sx={{ minWidth: 180 }}
-            >
-              <MenuItem value="all">الكل</MenuItem>
-              <MenuItem value="active">نشط</MenuItem>
-              <MenuItem value="paid">مدفوع</MenuItem>
-            </TextField>
+    <>
+      <ListPageLayout
+        kicker="السجلات"
+        title={`الديون (${standaloneDebts.length})`}
+        subtitle="إضافة، تعديل، حذف، ودفع جزء من الدين"
+        maxWidth="md"
+        action={
+          <Button startIcon={<Add />} variant="contained" onClick={() => handleOpenDialog()}>
+            إضافة دين
+          </Button>
+        }
+        filters={
+          <Stack spacing={2}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <KpiCard icon={AccountBalance} label="إجمالي الديون" value={formatCurrency(stats.totalAmount)} tone="primary" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <KpiCard icon={Paid} label="المدفوع" value={formatCurrency(stats.totalPaid)} tone="success" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <KpiCard icon={WarningAmber} label="المتبقي" value={formatCurrency(stats.totalRemaining)} tone="warning" />
+              </Grid>
+            </Grid>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <SearchField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="ابحث بالاسم أو الملاحظة..."
+              />
+              <TextField
+                select
+                label="الحالة"
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as "all" | "active" | "paid")
+                }
+                sx={{ minWidth: { sm: 180 } }}
+                size="small"
+              >
+                <MenuItem value="all">الكل</MenuItem>
+                <MenuItem value="active">نشط</MenuItem>
+                <MenuItem value="paid">مدفوع</MenuItem>
+              </TextField>
+            </Stack>
           </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Debts list */}
-      <Stack spacing={2.5}>
-        {filteredDebts.map((debt) => {
+        }
+      >
+        <Stack spacing={2}>
+          {filteredDebts.length === 0 ? (
+            <EmptyState
+              icon={AccountBalance}
+              title="لا توجد ديون مسجلة"
+              actionLabel="إضافة دين"
+              onAction={() => handleOpenDialog()}
+            />
+          ) : (
+            filteredDebts.map((debt) => {
           const client = clients.find((c) => c.id === debt.clientId);
           return (
-            <Card
-              key={debt.id}
-              sx={{
-                borderRadius: 2.5,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-              }}
-            >
-              <CardContent sx={{ p: 2.5 }}>
+            <AppCard key={debt.id} padding={2.5}>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
                   <Avatar
                     sx={{
@@ -411,29 +355,18 @@ export const DebtsPage = () => {
                     >
                       <Edit fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(debt.id)}
-                      sx={{ bgcolor: "error.light", color: "white" }}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
+                    <ConfirmDeleteButton
+                      confirmMessage="هل أنت متأكد من حذف هذا الدين؟"
+                      onConfirm={() => handleDelete(debt.id)}
+                    />
                   </Stack>
                 </Stack>
-              </CardContent>
-            </Card>
+            </AppCard>
           );
-        })}
-
-        {filteredDebts.length === 0 && (
-          <Card sx={{ textAlign: "center", py: 6 }}>
-            <Typography variant="h6" color="text.secondary">
-              لا توجد ديون مسجلة
-            </Typography>
-          </Card>
-        )}
-      </Stack>
+            })
+          )}
+        </Stack>
+      </ListPageLayout>
 
       {/* Add / Edit Debt Dialog */}
       <Dialog
@@ -536,7 +469,7 @@ export const DebtsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 };
 

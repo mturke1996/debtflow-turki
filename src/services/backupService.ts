@@ -8,6 +8,18 @@ import type {
   StandaloneDebt,
   DebtParty,
 } from '../types';
+import {
+  clientsService,
+  invoicesService,
+  paymentsService,
+  expensesService,
+  expenseInvoicesService,
+  standaloneDebtsService,
+  debtPartiesService,
+} from './firebaseService';
+
+export const BACKUP_VERSION = '1.1.0';
+export const BACKUP_META_KEY = 'debtflow-backup-meta';
 
 export interface BackupData {
   clients: Client[];
@@ -20,6 +32,200 @@ export interface BackupData {
   exportDate: string;
   version: string;
 }
+
+export interface BackupStats {
+  clients: number;
+  invoices: number;
+  payments: number;
+  expenses: number;
+  expenseInvoices: number;
+  standaloneDebts: number;
+  debtParties: number;
+  total: number;
+}
+
+export interface BackupMeta {
+  lastExportAt: string;
+  lastExportFormat: 'excel' | 'json';
+  recordCount: number;
+}
+
+export interface RestoreResult {
+  imported: BackupStats;
+  durationMs: number;
+}
+
+export type RestoreProgressCallback = (label: string, percent: number) => void;
+
+export const getBackupStats = (data: Partial<BackupData>): BackupStats => {
+  const stats: BackupStats = {
+    clients: data.clients?.length ?? 0,
+    invoices: data.invoices?.length ?? 0,
+    payments: data.payments?.length ?? 0,
+    expenses: data.expenses?.length ?? 0,
+    expenseInvoices: data.expenseInvoices?.length ?? 0,
+    standaloneDebts: data.standaloneDebts?.length ?? 0,
+    debtParties: data.debtParties?.length ?? 0,
+    total: 0,
+  };
+  stats.total =
+    stats.clients +
+    stats.invoices +
+    stats.payments +
+    stats.expenses +
+    stats.expenseInvoices +
+    stats.standaloneDebts +
+    stats.debtParties;
+  return stats;
+};
+
+export const readBackupMeta = (): BackupMeta | null => {
+  try {
+    const raw = localStorage.getItem(BACKUP_META_KEY);
+    return raw ? (JSON.parse(raw) as BackupMeta) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const writeBackupMeta = (meta: BackupMeta): void => {
+  localStorage.setItem(BACKUP_META_KEY, JSON.stringify(meta));
+};
+
+export const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} بايت`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} ك.ب`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} م.ب`;
+};
+
+export const parseBackupFile = async (file: File): Promise<Partial<BackupData>> => {
+  if (file.name.endsWith('.json')) {
+    return importFromJson(file);
+  }
+  return importFromExcel(file);
+};
+
+export const restoreBackupToFirestore = async (
+  data: Partial<BackupData>,
+  onProgress?: RestoreProgressCallback
+): Promise<RestoreResult> => {
+  const started = Date.now();
+  const imported = getBackupStats({});
+
+  type RestoreStep = {
+    key: keyof Omit<BackupStats, "total">;
+    label: string;
+    items?: { id: string }[];
+    upsert: (id: string, payload: Record<string, unknown>) => Promise<void>;
+    toPayload: (item: { id: string }) => Record<string, unknown>;
+  };
+
+  const steps: RestoreStep[] = [
+    {
+      key: "clients",
+      label: "العملاء",
+      items: data.clients,
+      upsert: (id, payload) => clientsService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as Client;
+        return rest;
+      },
+    },
+    {
+      key: "debtParties",
+      label: "أطراف الديون",
+      items: data.debtParties,
+      upsert: (id, payload) => debtPartiesService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as DebtParty;
+        return rest;
+      },
+    },
+    {
+      key: "invoices",
+      label: "الفواتير",
+      items: data.invoices,
+      upsert: (id, payload) => invoicesService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as Invoice;
+        return rest;
+      },
+    },
+    {
+      key: "payments",
+      label: "المدفوعات",
+      items: data.payments,
+      upsert: (id, payload) => paymentsService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as Payment;
+        return rest;
+      },
+    },
+    {
+      key: "expenses",
+      label: "المصروفات",
+      items: data.expenses,
+      upsert: (id, payload) => expensesService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as Expense;
+        return rest;
+      },
+    },
+    {
+      key: "expenseInvoices",
+      label: "فواتير المصروفات",
+      items: data.expenseInvoices,
+      upsert: (id, payload) => expenseInvoicesService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as ExpenseInvoice;
+        return rest;
+      },
+    },
+    {
+      key: "standaloneDebts",
+      label: "الديون",
+      items: data.standaloneDebts,
+      upsert: (id, payload) => standaloneDebtsService.setWithId(id, payload as never),
+      toPayload: (item) => {
+        const { id: _id, ...rest } = item as StandaloneDebt;
+        return rest;
+      },
+    },
+  ];
+
+  const activeSteps = steps.filter((step) => step.items?.length);
+  const totalSteps = activeSteps.length || 1;
+  let stepIndex = 0;
+
+  for (const step of activeSteps) {
+    stepIndex += 1;
+    onProgress?.(step.label, Math.round((stepIndex / totalSteps) * 90));
+
+    let count = 0;
+    for (const item of step.items ?? []) {
+      if (!item.id) continue;
+      await step.upsert(item.id, step.toPayload(item));
+      count += 1;
+    }
+    imported[step.key] = count;
+  }
+
+  imported.total =
+    imported.clients +
+    imported.invoices +
+    imported.payments +
+    imported.expenses +
+    imported.expenseInvoices +
+    imported.standaloneDebts +
+    imported.debtParties;
+
+  onProgress?.("اكتمل", 100);
+
+  return {
+    imported,
+    durationMs: Date.now() - started,
+  };
+};
 
 /**
  * Export all data to Excel file
@@ -246,15 +452,17 @@ export const importFromExcel = async (
       if (workbook.SheetNames.includes('بنود الفواتير')) {
         const itemsSheet = workbook.Sheets['بنود الفواتير'];
         const itemsData = XLSX.utils.sheet_to_json(itemsSheet);
-        invoiceItemsMap = itemsData.reduce((acc: any, item: any) => {
-          const invoiceNum = item['معرف الفاتورة'];
+        invoiceItemsMap = (itemsData as Record<string, unknown>[]).reduce<Record<string, any[]>>(
+          (acc, item) => {
+          const row = item as Record<string, unknown>;
+          const invoiceNum = String(row['معرف الفاتورة'] ?? '');
           if (!acc[invoiceNum]) acc[invoiceNum] = [];
           acc[invoiceNum].push({
             id: `${invoiceNum}-${acc[invoiceNum].length}`,
-            description: item['الوصف'],
-            quantity: item['الكمية'],
-            unitPrice: item['سعر الوحدة'],
-            total: item['الإجمالي'],
+            description: row['الوصف'],
+            quantity: row['الكمية'],
+            unitPrice: row['سعر الوحدة'],
+            total: row['الإجمالي'],
           });
           return acc;
         }, {});

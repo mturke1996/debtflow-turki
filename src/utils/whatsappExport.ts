@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import type { Client, Expense } from '../types';
 import { formatCurrency } from './calculations';
+import { normalizeCategoryLabel } from '@/constants/expenseCategories';
 import dayjs from 'dayjs';
 
 export const generateWhatsAppStatement = async (
@@ -115,7 +116,7 @@ export const generateWhatsAppStatement = async (
               ${exp.description}
             </div>
             <div style="font-size: 11px; color: #64748b;">
-              ${dayjs(exp.date).format('DD/MM/YYYY')} • ${exp.category}
+              ${dayjs(exp.date).format('DD/MM/YYYY')} • ${normalizeCategoryLabel(exp.category)}
             </div>
           </div>
           <div style="font-weight: 700; color: #f59e0b; font-size: 14px;">

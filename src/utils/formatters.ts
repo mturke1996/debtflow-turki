@@ -1,5 +1,8 @@
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ar';
+
+dayjs.extend(relativeTime);
 
 // تعيين اللغة العربية بشكل افتراضي
 dayjs.locale('ar');
@@ -73,6 +76,26 @@ export const invoiceStatuses = {
   overdue: 'متأخرة',
   cancelled: 'ملغاة',
 } as const;
+
+export type InvoiceStatus = keyof typeof invoiceStatuses;
+
+export const getStatusLabel = (status: string): string =>
+  invoiceStatuses[status as InvoiceStatus] ?? 'نشطة';
+
+export const getInvoiceStatusStyle = (status: string): { bg: string; color: string; border: string } => {
+  switch (status) {
+    case 'paid':
+      return { bg: 'var(--pastel-green-bg)', color: 'var(--pastel-green-fg)', border: 'var(--pastel-green-fg)' };
+    case 'partially_paid':
+      return { bg: 'var(--pastel-amber-bg)', color: 'var(--pastel-amber-fg)', border: 'var(--pastel-amber-fg)' };
+    case 'overdue':
+      return { bg: 'var(--pastel-red-bg)', color: 'var(--pastel-red-fg)', border: 'var(--pastel-red-fg)' };
+    case 'draft':
+      return { bg: 'var(--panel-muted)', color: 'var(--ink-faint)', border: 'var(--ink-faint)' };
+    default:
+      return { bg: 'var(--accent-soft)', color: 'var(--accent-text)', border: 'var(--accent)' };
+  }
+};
 
 // حالات الديون بالعربية
 export const debtStatuses = {
