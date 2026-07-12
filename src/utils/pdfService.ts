@@ -3,45 +3,83 @@ import React from "react";
 import toast from "react-hot-toast";
 
 type PdfShareOptions = {
+  /** عنوان قصير (بدون روابط) */
   title?: string;
-  text?: string;
   phone?: string;
   whatsappMessage?: string;
+};
+
+/** ينظّف اسم الملف من رموز غير صالحة ويضمن لاحقة .pdf */
+export const sanitizePdfFilename = (raw: string): string => {
+  const base = (raw || "مستند")
+    .replace(/\.pdf$/i, "")
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .replace(/-+/g, "-")
+    .trim()
+    .replace(/^[-.\s]+|[-.\s]+$/g, "");
+
+  return `${base || "مستند"}.pdf`;
+};
+
+/**
+ * اسم ملف واضح: نوع المستند + اسم العميل (+ مرجع اختياري)
+ * مثال: التقرير-المالي-الشامل-شركة النور.pdf
+ */
+export const buildPdfFilename = (
+  docType: string,
+  clientName?: string,
+  reference?: string
+): string => {
+  const parts = [docType.trim(), clientName?.trim(), reference?.trim()].filter(
+    (part): part is string => Boolean(part && part.length > 0)
+  );
+  return sanitizePdfFilename(parts.join("-"));
 };
 
 export const generatePdfBlob = async (document: React.ReactElement): Promise<Blob> => {
   const asPdf = pdf();
   asPdf.updateContainer(document);
-  const blob = await asPdf.toBlob();
-  return blob;
+  return asPdf.toBlob();
 };
 
 const getPdfTitle = (filename: string, title?: string) =>
-  title || filename.replace(/\.pdf$/i, "");
+  (title || filename).replace(/\.pdf$/i, "").trim();
 
-const openPdfBlob = (blob: Blob) => {
-  const url = URL.createObjectURL(blob);
-  const tab = window.open(url, "_blank");
+/** فتح ملف PDF في تبويب جديد — السلوك المناسب للآيفون للمشاركة لاحقاً من عارض PDF */
+const openPdfBlob = (blob: Blob, filename: string) => {
+  const safeName = sanitizePdfFilename(filename);
+  // type صريح يساعد Safari على فتح عارض PDF بدل التحميل/المشاركة المباشرة
+  const pdfBlob =
+    blob.type === "application/pdf"
+      ? blob
+      : new Blob([blob], { type: "application/pdf" });
+
+  const url = URL.createObjectURL(pdfBlob);
+  const tab = window.open(url, "_blank", "noopener,noreferrer");
+
   if (!tab) {
+    // إن حظر المتصفح النافذة: نفتح في نفس الصفحة كحل أخير
     window.location.href = url;
   }
-  setTimeout(() => URL.revokeObjectURL(url), 120000);
+
+  // إبقاء الرابط صالحاً وقتاً كافياً للعرض والمشاركة من عارض الآيفون
+  setTimeout(() => URL.revokeObjectURL(url), 5 * 60_000);
+
+  return safeName;
 };
 
-const cleanPhone = (phone?: string) => phone?.replace(/[^0-9]/g, "") || "";
-
-const isShareAbort = (error: unknown) =>
-  typeof error === "object" &&
-  error !== null &&
-  "name" in error &&
-  (error as { name?: string }).name === "AbortError";
-
+/**
+ * إنشاء PDF وفتحه للعرض — مثل السابق.
+ * على الآيفون: بعد الفتح يمكن المشاركة من زر المشاركة في عارض PDF.
+ */
 export const downloadPdf = async (document: React.ReactElement, filename: string) => {
-  const title = getPdfTitle(filename);
+  const safeName = sanitizePdfFilename(filename);
+  const title = getPdfTitle(safeName);
   const toastId = toast.loading(`جاري إنشاء ${title}...`);
   try {
     const blob = await generatePdfBlob(document);
-    openPdfBlob(blob);
+    openPdfBlob(blob, safeName);
     toast.success(`تم فتح ${title}`, { id: toastId });
   } catch (error) {
     toast.error("فشل إنشاء ملف PDF", { id: toastId });
@@ -49,78 +87,47 @@ export const downloadPdf = async (document: React.ReactElement, filename: string
   }
 };
 
+/**
+ * نفس سلوك الفتح — بدون مشاركة مباشرة من التطبيق.
+ * المشاركة تتم يدوياً من عارض PDF (خصوصاً على الآيفون).
+ */
 export const sharePdf = async (
   document: React.ReactElement,
   filename: string,
   options: PdfShareOptions = {}
 ) => {
-  const toastId = toast.loading("جاري تجهيز الملف للمشاركة...");
+  const safeName = sanitizePdfFilename(filename);
+  const title = getPdfTitle(safeName, options.title);
+  const toastId = toast.loading(`جاري فتح ${title}...`);
+
   try {
     const blob = await generatePdfBlob(document);
-    const file = new File([blob], filename, { type: "application/pdf" });
-
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({
-        title: getPdfTitle(filename, options.title),
-        text: options.text,
-        files: [file],
-      });
-      toast.success("تمت المشاركة", { id: toastId });
-      return;
-    }
-
-    openPdfBlob(blob);
-    toast.success("تم فتح ملف PDF للمشاركة اليدوية", { id: toastId });
+    openPdfBlob(blob, safeName);
+    toast.success(`تم فتح ${title} — يمكنك مشاركته من عارض الملف`, {
+      id: toastId,
+    });
   } catch (error) {
-    if (isShareAbort(error)) {
-      toast.dismiss(toastId);
-      return;
-    }
-    toast.error("فشل تجهيز ملف المشاركة", { id: toastId });
+    toast.error("فشل فتح ملف PDF", { id: toastId });
     throw error;
   }
 };
 
+/** فتح PDF للعرض — بدون مشاركة مباشرة أو روابط للمنظومة */
 export const sharePdfToWhatsApp = async (
   document: React.ReactElement,
   filename: string,
   options: PdfShareOptions = {}
 ) => {
-  const toastId = toast.loading("جاري تجهيز ملف PDF للواتساب...");
-  const title = getPdfTitle(filename, options.title);
-  const text = options.text || "مرفق ملف PDF جاهز للمراجعة.";
+  const safeName = sanitizePdfFilename(filename);
+  const title = getPdfTitle(safeName, options.title);
+  const toastId = toast.loading(`جاري فتح ${title}...`);
 
   try {
     const blob = await generatePdfBlob(document);
-    const file = new File([blob], filename, { type: "application/pdf" });
-
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title, text, files: [file] });
-      toast.success("تم فتح خيارات المشاركة", { id: toastId });
-      return;
-    }
-
-    const phone = cleanPhone(options.phone);
-    if (phone) {
-      const message = options.whatsappMessage || `${text}\n\n${title}`;
-      window.open(
-        `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
-      openPdfBlob(blob);
-      toast.success("تم فتح واتساب وملف PDF", { id: toastId });
-      return;
-    }
-
-    openPdfBlob(blob);
-    toast.success("تم فتح ملف PDF. يمكن مشاركته عبر واتساب من الهاتف.", { id: toastId });
+    openPdfBlob(blob, safeName);
+    toast.success(`تم فتح ${title} — شارك الملف من عارض PDF`, { id: toastId });
   } catch (error) {
-    if (isShareAbort(error)) {
-      toast.dismiss(toastId);
-      return;
-    }
-    toast.error("فشل تجهيز ملف واتساب", { id: toastId });
+    toast.error("فشل فتح ملف PDF", { id: toastId });
     throw error;
   }
 };

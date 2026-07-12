@@ -51,7 +51,7 @@ export const ExpenseInvoicesPage = () => {
     const { ExpenseInvoicesSummaryStyledPDF } = await loadStyledPDFs();
     await downloadPdf(
       <ExpenseInvoicesSummaryStyledPDF expenseInvoices={expenseInvoices} clients={clients} />,
-      `فواتير-مصروفات-${dayjs().format('YYYY-MM-DD')}.pdf`
+      `تقرير-فواتير-المصروفات-${dayjs().format('YYYY-MM-DD')}.pdf`
     );
   };
 
@@ -68,7 +68,7 @@ export const ExpenseInvoicesPage = () => {
     const { ExpenseInvoiceStyledPDF } = await loadStyledPDFs();
     await downloadPdf(
       <ExpenseInvoiceStyledPDF invoice={invoice} client={client} />,
-      `فاتورة-مصروفات-${invoice.invoiceNumber}.pdf`
+      `فاتورة-مصروفات-${invoice.invoiceNumber}-${client.name}.pdf`
     );
   };
 

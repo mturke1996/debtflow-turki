@@ -400,7 +400,7 @@ export const ClientFinalStyledPDF = ({
                 money: true,
               },
               {
-                label: `نسبة الإدارة (${profitPercentage}%)`,
+                label: `صافي النسبة (${profitPercentage}%)`,
                 value: profit,
                 color: accentColor,
                 money: true,
@@ -424,7 +424,7 @@ export const ClientFinalStyledPDF = ({
 
           <View style={s.formulaBox}>
             <Text style={s.formulaTxt}>
-              طريقة الحساب: المستحق = المصروفات + نسبة الإدارة + الديون غير المسددة · المتبقي = المستحق − المقبوض
+              طريقة الحساب: المستحق = المصروفات + صافي النسبة + الديون غير المسددة · المتبقي = المستحق − المقبوض
             </Text>
           </View>
         </View>
@@ -569,7 +569,7 @@ export const ClientFinalStyledPDF = ({
           title="خلاصة التسوية النهائية"
           lines={[
             { label: "إجمالي المصروفات", amount: totalExpenses },
-            { label: `نسبة الإدارة (${profitPercentage}%)`, amount: profit },
+            { label: `صافي النسبة (${profitPercentage}%)`, amount: profit },
             { label: "ديون غير مسددة", amount: remainingDebts },
             {
               label: "إجمالي المستحق",

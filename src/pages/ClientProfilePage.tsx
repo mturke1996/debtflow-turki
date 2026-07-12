@@ -56,8 +56,7 @@ import { KpiCard } from "@/components/ui/KpiCard";
 import { ShortcutTile } from "@/components/ui/ShortcutTile";
 import { QuickExpenseSheet } from "@/components/expense/QuickExpenseSheet";
 import { DialogScreenHeader } from "@/components/ui/DialogScreenHeader";
-import { ClientExpensesSection } from "@/components/client/ClientExpensesSection";
-import { ClientPaymentsSection } from "@/components/client/ClientPaymentsSection";
+import { ClientLedgerScreen } from "@/components/client/ClientLedgerScreen";
 import { ClientDebtsSection } from "@/components/client/ClientDebtsSection";
 import { DEFAULT_EXPENSE_CATEGORY } from "@/constants/expenseCategories";
 import { normalizeCategoryLabel } from "@/constants/expenseCategories";
@@ -112,7 +111,7 @@ export const ClientProfilePage = () => {
         theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.12)" : "rgba(214, 69, 69, 0.08)",
       borderColor:
         theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.2)" : "rgba(214, 69, 69, 0.12)",
-      onClick: () => setExpensesListDialogOpen(true),
+      onClick: () => setActiveSection("expenses"),
     },
     {
       title: "المدفوعات",
@@ -122,7 +121,7 @@ export const ClientProfilePage = () => {
         theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.12)" : "rgba(13, 150, 104, 0.08)",
       borderColor:
         theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.2)" : "rgba(13, 150, 104, 0.12)",
-      onClick: () => setPaymentsListDialogOpen(true),
+      onClick: () => setActiveSection("payments"),
     },
     {
       title: "الديون",
@@ -150,8 +149,7 @@ export const ClientProfilePage = () => {
   const [debtDialogOpen, setDebtDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [editingDebt, setEditingDebt] = useState<StandaloneDebt | null>(null);
-  const [expensesListDialogOpen, setExpensesListDialogOpen] = useState(false);
-  const [paymentsListDialogOpen, setPaymentsListDialogOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<"expenses" | "payments" | null>(null);
   const [debtsListDialogOpen, setDebtsListDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<PaymentType | null>(
     null
@@ -542,7 +540,7 @@ export const ClientProfilePage = () => {
         debts={clientDebts}
         profitPercentage={client.profitPercentage || 0}
       />,
-      `التقرير-النهائي-${client.name}.pdf`
+      `التقرير-المالي-الشامل-${client.name}.pdf`
     );
   };
 
@@ -551,7 +549,7 @@ export const ClientProfilePage = () => {
     setPdfMenuAnchor(null);
     downloadPdf(
       <ExpensesStyledPDF client={client} expenses={clientExpenses} />,
-      `مصروفات-${client.name}.pdf`
+      `تقرير-المصروفات-${client.name}.pdf`
     );
   };
 
@@ -560,7 +558,7 @@ export const ClientProfilePage = () => {
     setPdfMenuAnchor(null);
     downloadPdf(
       <PaymentsStyledPDF client={client} payments={clientPayments} />,
-      `مدفوعات-${client.name}.pdf`
+      `تقرير-المدفوعات-${client.name}.pdf`
     );
   };
 
@@ -825,7 +823,7 @@ export const ClientProfilePage = () => {
         notes: "",
       });
       // إعادة فتح قائمة المدفوعات
-      setPaymentsListDialogOpen(true);
+      setActiveSection("payments");
       setSnackbarOpen(true);
     } catch (error: any) {
       console.error("Error saving payment:", error);
@@ -875,7 +873,7 @@ export const ClientProfilePage = () => {
         notes: "",
       });
       // إعادة فتح قائمة المصروفات
-      setExpensesListDialogOpen(true);
+      setActiveSection("expenses");
       setSnackbarOpen(true);
     } catch (error: any) {
       console.error("Error saving expense:", error);
@@ -1100,33 +1098,36 @@ export const ClientProfilePage = () => {
         )}
       </Stack>
 
-
-      <ClientExpensesSection
-        open={expensesListDialogOpen}
-        onClose={() => setExpensesListDialogOpen(false)}
-        expenses={filteredExpenses}
+      <ClientLedgerScreen
+        open={activeSection === "expenses"}
+        variant="expenses"
+        clientName={client.name}
+        onBack={() => setActiveSection(null)}
         searchQuery={expensesSearchQuery}
         onSearchChange={setExpensesSearchQuery}
-        totalExpenses={summary.totalExpenses}
+        totalAmount={summary.totalExpenses}
+        items={filteredExpenses}
+        allCount={clientExpenses.length}
         onAdd={() => {
           setEditingExpense(null);
           setExpenseDialogOpen(true);
         }}
-        onEdit={(expense) => {
-          handleEditExpense(expense);
-          setExpensesListDialogOpen(false);
-        }}
-        onDelete={handleDeleteExpense}
         onExportPdf={handleDownloadExpensesPdf}
+        onEditExpense={(expense) => handleEditExpense(expense)}
+        onDeleteExpense={handleDeleteExpense}
       />
 
-      <ClientPaymentsSection
-        open={paymentsListDialogOpen}
-        onClose={() => setPaymentsListDialogOpen(false)}
-        payments={filteredPayments}
+      <ClientLedgerScreen
+        open={activeSection === "payments"}
+        variant="payments"
+        clientName={client.name}
+        onBack={() => setActiveSection(null)}
         searchQuery={paymentsSearchQuery}
         onSearchChange={setPaymentsSearchQuery}
-        totalPaid={summary.totalPaid}
+        totalAmount={summary.totalPaid}
+        items={filteredPayments}
+        allCount={clientPayments.length}
+        invoices={invoices}
         onAdd={() => {
           setEditingPayment(null);
           resetPayment({
@@ -1138,12 +1139,9 @@ export const ClientProfilePage = () => {
           });
           setPaymentDialogOpen(true);
         }}
-        onEdit={(payment) => {
-          handleEditPayment(payment);
-          setPaymentsListDialogOpen(false);
-        }}
-        onDelete={handleDeletePayment}
         onExportPdf={handleDownloadPaymentsPdf}
+        onEditPayment={(payment) => handleEditPayment(payment)}
+        onDeletePayment={handleDeletePayment}
       />
 
       <QuickExpenseSheet
@@ -1172,7 +1170,7 @@ export const ClientProfilePage = () => {
             : null
         }
         onSaved={() => {
-          setExpensesListDialogOpen(true);
+          setActiveSection("expenses");
           setSnackbarMessage(editingExpense ? "تم التعديل بنجاح" : "تمت الإضافة بنجاح");
           setSnackbarOpen(true);
         }}
@@ -1186,8 +1184,19 @@ export const ClientProfilePage = () => {
           setEditingPayment(null);
         }}
         fullScreen
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            pt: "env(safe-area-inset-top, 0px)",
+            bgcolor: "background.default",
+          },
+        }}
       >
-        <form onSubmit={handlePaymentSubmit(onSubmitPayment)}>
+        <form
+          onSubmit={handlePaymentSubmit(onSubmitPayment)}
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
+        >
           <DialogScreenHeader
             title={editingPayment ? "تعديل دفعة" : "إضافة دفعة جديدة"}
             onClose={() => {
@@ -1196,7 +1205,7 @@ export const ClientProfilePage = () => {
             }}
           />
 
-          <Box sx={{ p: 3.5 }}>
+          <Box sx={{ p: 3, pb: "calc(24px + env(safe-area-inset-bottom, 0px))", flex: 1, overflowY: "auto" }}>
             <Stack spacing={3.5}>
               <Controller
                 name="invoiceId"
@@ -1319,7 +1328,8 @@ export const ClientProfilePage = () => {
                 color="success"
                 fullWidth
                 size="large"
-                sx={{ borderRadius: 2, py: 1.5 }}
+                className="btn-primary-premium"
+                sx={{ borderRadius: 2.5, py: 1.5, fontWeight: 800 }}
               >
                 {editingPayment ? "حفظ" : "إضافة"}
               </Button>
@@ -1495,6 +1505,7 @@ export const ClientProfilePage = () => {
       <ClientDebtsSection
         open={debtsListDialogOpen}
         onClose={() => setDebtsListDialogOpen(false)}
+        clientName={client.name}
         parties={filteredParties.map((p) => ({
           ...p,
           debtCount: p.debts.length,

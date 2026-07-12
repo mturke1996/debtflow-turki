@@ -143,9 +143,8 @@ export const InvoiceDetailsPage = () => {
     try {
       await downloadPdf(
         React.createElement(InvoiceStyledPDF, { invoice, client }),
-        `فاتورة-${invoice.invoiceNumber}`
+        `فاتورة-${invoice.invoiceNumber}-${client.name}.pdf`
       );
-      toast.success("تم تحميل PDF بنجاح");
     } catch {
       toast.error("فشل في إنشاء PDF");
     } finally {
@@ -159,10 +158,9 @@ export const InvoiceDetailsPage = () => {
     try {
       await sharePdf(
         React.createElement(InvoiceStyledPDF, { invoice, client }),
-        `فاتورة-${invoice.invoiceNumber}`,
+        `فاتورة-${invoice.invoiceNumber}-${client.name}.pdf`,
         {
-          title: `فاتورة #${invoice.invoiceNumber} - ${client.name}`,
-          text: `مرفق: فاتورة رقم ${invoice.invoiceNumber} — ${client.name}`,
+          title: `فاتورة ${invoice.invoiceNumber} - ${client.name}`,
         }
       );
     } catch {

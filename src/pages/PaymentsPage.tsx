@@ -201,7 +201,7 @@ export const PaymentsPage = () => {
     const { PaymentsSummaryStyledPDF } = await loadStyledPDFs();
     await downloadPdf(
       <PaymentsSummaryStyledPDF payments={payments} clients={clients} />,
-      `مدفوعات-${dayjs().format("YYYY-MM-DD")}.pdf`
+      `تقرير-المدفوعات-${dayjs().format("YYYY-MM-DD")}.pdf`
     );
   };
 

@@ -7,6 +7,7 @@ import { formatCurrency } from "@/utils/calculations";
 type ClientDebtsSectionProps = {
   open: boolean;
   onClose: () => void;
+  clientName?: string;
   parties: PartyWithStats[];
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -18,6 +19,7 @@ type ClientDebtsSectionProps = {
 export const ClientDebtsSection = ({
   open,
   onClose,
+  clientName,
   parties,
   searchQuery,
   onSearchChange,
@@ -28,6 +30,7 @@ export const ClientDebtsSection = ({
   <ClientSectionShell
     open={open}
     onClose={onClose}
+    clientName={clientName}
     title={`الديون (${parties.length})`}
     searchQuery={searchQuery}
     onSearchChange={onSearchChange}

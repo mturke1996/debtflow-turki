@@ -1,6 +1,6 @@
-import { Edit, Delete } from "@mui/icons-material";
-import { Box, Chip, IconButton, Stack, Typography } from "@mui/material";
+import { CalendarToday } from "@mui/icons-material";
 import type { ReactNode } from "react";
+import { RowActionBar, RowActionButton } from "@/components/ui/ActionButtons";
 
 type LedgerRowTone = "debit" | "credit" | "neutral";
 
@@ -16,11 +16,22 @@ type LedgerRowProps = {
   extra?: ReactNode;
 };
 
-const toneColor = {
-  debit: "error.main",
-  credit: "success.main",
-  neutral: "text.primary",
+const toneClass = {
+  debit: "ledger-card--debit",
+  credit: "ledger-card--credit",
+  neutral: "",
 } as const;
+
+const amountClass = {
+  debit: "ledger-card__amount--debit",
+  credit: "ledger-card__amount--credit",
+  neutral: "",
+} as const;
+
+function rowInitial(title: string) {
+  const t = title.trim();
+  return t ? t.charAt(0) : "—";
+}
 
 export const LedgerRow = ({
   title,
@@ -33,61 +44,34 @@ export const LedgerRow = ({
   onDelete,
   extra,
 }: LedgerRowProps) => (
-  <Box
-    className="surface-panel pressable"
-    sx={{
-      px: 2,
-      py: 1.75,
-      display: "flex",
-      alignItems: "flex-start",
-      gap: 1.5,
-      borderRadius: 1.5,
-    }}
-  >
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.25 }}>
-        <Typography variant="body2" fontWeight={700} noWrap sx={{ flex: 1 }}>
-          {title}
-        </Typography>
-        {badge ? (
-          <Chip
-            label={badge}
-            size="small"
-            sx={{ height: 20, fontSize: "0.625rem", fontWeight: 600 }}
-          />
-        ) : null}
-      </Stack>
-      <Typography variant="caption" color="text.secondary" display="block">
-        {date}
-      </Typography>
-      {notes ? (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "block", mt: 0.5, lineHeight: 1.5 }}
-          noWrap
-        >
-          {notes}
-        </Typography>
-      ) : null}
-      <Typography
-        variant="subtitle2"
-        fontWeight={800}
-        className="num"
-        color={toneColor[tone]}
-        sx={{ mt: 0.75 }}
-      >
-        {amount}
-      </Typography>
-      {extra}
-    </Box>
-    <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
-      <IconButton size="small" onClick={onEdit} aria-label="تعديل">
-        <Edit sx={{ fontSize: 17 }} />
-      </IconButton>
-      <IconButton size="small" onClick={onDelete} aria-label="حذف" color="error">
-        <Delete sx={{ fontSize: 17 }} />
-      </IconButton>
-    </Stack>
-  </Box>
+  <article className={`ledger-card client-ledger-row ${toneClass[tone]}`}>
+    <div className="ledger-card__main">
+      <div className={`ledger-card__avatar ledger-card__avatar--${tone}`} aria-hidden>
+        {rowInitial(title)}
+      </div>
+
+      <div className="ledger-card__body">
+        <div className="ledger-card__header">
+          <h3 className="ledger-card__title">{title}</h3>
+          <span className={`ledger-card__amount num ${amountClass[tone]}`}>{amount}</span>
+        </div>
+
+        <div className="ledger-card__meta">
+          <span className="ledger-card__meta-item">
+            <CalendarToday sx={{ fontSize: 13 }} />
+            {date}
+          </span>
+          {badge ? <span className="ledger-card__badge">{badge}</span> : null}
+        </div>
+
+        {notes ? <p className="ledger-card__notes">{notes}</p> : null}
+        {extra ? <div className="ledger-card__extra">{extra}</div> : null}
+      </div>
+    </div>
+
+    <RowActionBar>
+      <RowActionButton variant="edit" onClick={onEdit} />
+      <RowActionButton variant="delete" onClick={onDelete} />
+    </RowActionBar>
+  </article>
 );

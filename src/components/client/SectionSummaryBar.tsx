@@ -12,29 +12,14 @@ export const SectionSummaryBar = ({
   label,
   total,
   onExportPdf,
-  exportLabel = "تصدير PDF",
+  exportLabel = "PDF",
 }: SectionSummaryBarProps) => (
-  <Box
-    sx={{
-      mx: 2,
-      mb: 1.5,
-      px: 2,
-      py: 1.5,
-      borderRadius: 1.5,
-      border: 1,
-      borderColor: "divider",
-      bgcolor: "background.default",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 2,
-    }}
-  >
-    <Box>
-      <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
+  <Box className="client-section-summary">
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" sx={{ letterSpacing: "0.04em" }}>
         {label}
       </Typography>
-      <Typography variant="h6" fontWeight={800} className="num">
+      <Typography variant="h5" fontWeight={900} className="num" sx={{ lineHeight: 1.15, mt: 0.25 }}>
         {total}
       </Typography>
     </Box>
@@ -42,9 +27,16 @@ export const SectionSummaryBar = ({
       <Button
         size="small"
         variant="outlined"
-        startIcon={<PictureAsPdf />}
+        startIcon={<PictureAsPdf sx={{ fontSize: 18 }} />}
         onClick={onExportPdf}
-        sx={{ flexShrink: 0, fontWeight: 700 }}
+        sx={{
+          flexShrink: 0,
+          fontWeight: 800,
+          borderRadius: 2,
+          minHeight: 40,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+        }}
       >
         {exportLabel}
       </Button>

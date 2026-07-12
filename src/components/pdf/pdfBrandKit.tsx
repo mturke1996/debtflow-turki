@@ -95,10 +95,18 @@ export const pdfBrandStyles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: "bold",
     color: PDFPalette.primary,
-    marginBottom: 3,
+    marginBottom: 2,
     textAlign: "right",
     lineHeight: 1.35,
     letterSpacing: 0.2,
+  },
+  companyMeta: {
+    fontSize: 7.5,
+    fontWeight: "bold",
+    color: PDFPalette.muted,
+    textAlign: "right",
+    lineHeight: 1.45,
+    marginTop: 1,
   },
   engineer: {
     fontSize: 10,
@@ -560,33 +568,24 @@ export const PdfBrandedReportHeader = ({ titleEn, subtitleAr, refLine }: HeaderP
             <Text style={pdfBrandStyles.engineer}>{PDF_COMPANY_INFO.engineerName}</Text>
           ) : null}
           <Text style={pdfBrandStyles.tagEn}>{PDF_COMPANY_INFO.taglineEn}</Text>
+          {PDF_COMPANY_INFO.addressSingle ? (
+            <Text style={[pdfBrandStyles.companyMeta, { marginTop: 4 }]}>
+              {PDF_COMPANY_INFO.addressSingle}
+            </Text>
+          ) : null}
+          {PDF_COMPANY_INFO.phones.length ? (
+            <Text style={pdfBrandStyles.companyMeta}>
+              {PDF_COMPANY_INFO.phones.join("  ·  ")}
+            </Text>
+          ) : null}
         </View>
         <PdfLogoMark size={68} />
       </View>
     </View>
 
     <View style={pdfBrandStyles.divider}>
-      <View style={pdfBrandStyles.contactBlock}>
-        <View style={pdfBrandStyles.kvRow}>
-          <View style={[pdfBrandStyles.kvBox, { width: "55%" }]}>
-            <Text style={pdfBrandStyles.kvLabel}>العنوان</Text>
-            <Text style={pdfBrandStyles.kvVal}>
-              {PDF_COMPANY_INFO.addressLines.join("\n")}
-            </Text>
-          </View>
-          <View style={[pdfBrandStyles.kvBox, { width: "40%" }]}>
-            <Text style={pdfBrandStyles.kvLabel}>الهاتف</Text>
-            <Text style={pdfBrandStyles.kvVal}>
-              {PDF_COMPANY_INFO.phones.length
-                ? PDF_COMPANY_INFO.phones.join("\n")
-                : "—"}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {PDF_COMPANY_INFO.services.length ? (
-        <View style={pdfBrandStyles.servicesRow}>
+        <View style={[pdfBrandStyles.servicesRow, { marginTop: 0, paddingTop: 0, borderTopWidth: 0 }]}>
           <Text style={pdfBrandStyles.servicesLabel}>مجالات الخدمة</Text>
           <Text style={pdfBrandStyles.servicesText}>{servicesBulleted}</Text>
         </View>

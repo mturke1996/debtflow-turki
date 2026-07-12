@@ -213,6 +213,17 @@ export const createAppTheme = (mode: ThemeMode) => {
             maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
             boxShadow: mode === "light" ? sw(mode, 20, 50, 0.12) : `0 24px 64px ${alpha("#000", 0.55)}`,
             border: mode === "light" ? `1px solid ${alpha("#1c1917", 0.06)}` : `1px solid ${alpha("#f5f5f4", 0.06)}`,
+            "&.MuiDialog-paperFullScreen": {
+              margin: 0,
+              marginBottom: 0,
+              maxHeight: "100%",
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              borderRadius: 0,
+              border: "none",
+              boxShadow: "none",
+            },
           },
           container: {
             alignItems: "center",

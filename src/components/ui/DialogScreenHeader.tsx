@@ -16,15 +16,21 @@ export const DialogScreenHeader = ({
   action,
 }: DialogScreenHeaderProps) => (
   <Box
+    className="dialog-screen-header"
     sx={{
       display: "flex",
       alignItems: "center",
       gap: 1,
-      px: 2,
-      py: 1.5,
+      px: "max(12px, env(safe-area-inset-left))",
+      pr: "max(12px, env(safe-area-inset-right))",
+      py: 1.25,
+      minHeight: 56,
       borderBottom: 1,
       borderColor: "divider",
       bgcolor: "background.paper",
+      flexShrink: 0,
+      backdropFilter: "blur(16px) saturate(180%)",
+      WebkitBackdropFilter: "blur(16px) saturate(180%)",
     }}
   >
     <IconButton onClick={onClose} aria-label="إغلاق" edge="start">

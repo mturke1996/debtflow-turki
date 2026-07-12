@@ -231,13 +231,12 @@ export const generateWhatsAppStatement = async (
               try {
                 const response = await fetch('${image}');
                 const blob = await response.blob();
-                const file = new File([blob], 'كشف-حساب.png', { type: 'image/png' });
+                const file = new File([blob], 'كشف-حساب-${client.name}-${dayjs().format('DD-MM-YYYY')}.png', { type: 'image/png' });
                 
                 if (navigator.share && navigator.canShare({ files: [file] })) {
                   await navigator.share({
-                    title: 'كشف حساب - ${client.name}',
-                    text: 'كشف حساب العميل',
-                    files: [file]
+                    files: [file],
+                    title: 'كشف حساب - ${client.name}'
                   });
                 } else {
                   alert('المشاركة غير متاحة. يرجى تحميل الصورة ومشاركتها يدوياً.');

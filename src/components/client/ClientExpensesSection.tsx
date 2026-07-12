@@ -43,6 +43,7 @@ export const ClientExpensesSection = ({
     summaryLabel="إجمالي المصروفات"
     summaryTotal={formatCurrency(totalExpenses)}
     onAdd={onAdd}
+    addLabel="مصروف"
     onExportPdf={onExportPdf}
   >
     {expenses.length === 0 ? (

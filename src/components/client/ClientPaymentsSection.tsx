@@ -45,6 +45,7 @@ export const ClientPaymentsSection = ({
     summaryLabel="إجمالي المدفوعات"
     summaryTotal={formatCurrency(totalPaid)}
     onAdd={onAdd}
+    addLabel="دفعة"
     onExportPdf={onExportPdf}
   >
     {payments.length === 0 ? (
