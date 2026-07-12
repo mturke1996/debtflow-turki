@@ -51,6 +51,7 @@ export const LoginPage = () => {
 
   return (
     <Box
+      className="safe-top safe-x"
       sx={{
         minHeight: "100dvh",
         display: "grid",
@@ -166,6 +167,7 @@ export const LoginPage = () => {
               variant="contained"
               size="large"
               disabled={isLoading}
+              className="btn-primary-premium"
               sx={{ mt: 3, py: 1.35 }}
             >
               {isLoading ? "جاري تسجيل الدخول..." : "دخول"}

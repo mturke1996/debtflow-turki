@@ -9,15 +9,23 @@ import {
   PdfBrandedReportHeader,
   pdfBrandStyles as s,
   pdfFmtDate,
+  pdfFmtNum,
   PdfMoneyText,
+  PdfSectionTitle,
+  PdfSummaryStrip,
+  PdfEmptyBlock,
+  PdfSettlementCard,
+  PDF_PAGINATION,
 } from "./pdfBrandKit";
+import { expenseHasQuantityLine, formatQuantityDisplay } from "@/utils/expenseFormUtils";
 
 const payLabel = (m: string) => paymentMethods[m as keyof typeof paymentMethods] ?? m;
 
-const dangerColor = "#d64545";
-const successColor = "#0d9668";
-const accentColor = "#8b7e6a";
-const primaryColor = "#4a5d4a";
+const dangerColor = "#b91c1c";
+const successColor = "#15803d";
+const accentColor = "#78716c";
+const primaryColor = "#0f766e";
+const primaryDark = "#0d5c56";
 
 const invoiceStatusAr = (st: Invoice["status"]) =>
   invoiceStatuses[st as keyof typeof invoiceStatuses] ?? st;
@@ -255,12 +263,7 @@ export const PaymentsStyledPDF = ({ client, payments }: { client: Client; paymen
 };
 
 /* ============================================================
-   التقرير النهائي VIP — يحتوي:
-   - بيانات العميل الكاملة + KPIs
-   - جدول المصروفات بكل التفاصيل والملاحظات
-   - جدول المدفوعات الكامل
-   - جدول الديون والالتزامات
-   - الإجماليات النهائية والرصيد
+   التقرير المالي الشامل — وثيقة تسوية لحساب العميل
    ============================================================ */
 export const ClientFinalStyledPDF = ({
   client,
@@ -284,343 +287,314 @@ export const ClientFinalStyledPDF = ({
   const totalExpenses = expenses.reduce((x, y) => x + y.amount, 0);
   const totalPaid = payments.reduce((x, y) => x + y.amount, 0);
   const profit = (totalExpenses * (profitPercentage || 0)) / 100;
-  const totalDebts = debts.reduce((x, y) => x + y.amount, 0);
-  const paidDebts = debts.reduce((x, y) => x + y.paidAmount, 0);
   const remainingDebts = debts.reduce((x, y) => x + y.remainingAmount, 0);
   const obligations = totalExpenses + profit + remainingDebts;
   const balance = obligations - totalPaid;
   const remaining = Math.max(balance, 0);
   const surplus = Math.max(-balance, 0);
+  const settled = balance === 0;
 
   const today = pdfFmtDate(new Date().toISOString());
-  const expenseDates = expenses.map((e) => +new Date(e.date)).filter(Boolean);
-  const minDate = expenseDates.length ? new Date(Math.min(...expenseDates)).toISOString() : null;
-  const maxDate = expenseDates.length ? new Date(Math.max(...expenseDates)).toISOString() : null;
+  const allDates = [
+    ...expenses.map((e) => +new Date(e.date)),
+    ...payments.map((p) => +new Date(p.paymentDate)),
+    ...debts.map((d) => +new Date(d.date)),
+  ].filter((n) => Number.isFinite(n) && n > 0);
+  const minDate = allDates.length ? new Date(Math.min(...allDates)).toISOString() : null;
+  const maxDate = allDates.length ? new Date(Math.max(...allDates)).toISOString() : null;
 
-  /* أعمدة العمود الكامل المستخدم في التقرير النهائي */
+  const resultColor = surplus > 0 ? successColor : remaining > 0 ? dangerColor : primaryDark;
+  const resultLabel = surplus > 0 ? "فائض لصالح العميل" : remaining > 0 ? "المبلغ المتبقي للسداد" : "الحساب مسدَّد بالكامل";
+
+  const pdfExpenseQty = (e: Expense) =>
+    expenseHasQuantityLine({ quantity: e.quantity ?? null, unitPrice: e.unitPrice ?? null })
+      ? formatQuantityDisplay(e.quantity!, e.unit)
+      : "—";
+
+  const pdfExpenseUnitPrice = (e: Expense) =>
+    expenseHasQuantityLine({ quantity: e.quantity ?? null, unitPrice: e.unitPrice ?? null })
+      ? pdfFmtNum(e.unitPrice!)
+      : "—";
+
+  const expenseNote = (e: Expense) =>
+    [e.supplierInvoiceNumber ? `فاتورة: ${e.supplierInvoiceNumber}` : "", e.notes || ""]
+      .filter(Boolean)
+      .join(" - ") || "—";
+
   const Cf = {
-    n: { width: 24, textAlign: "center" as const },
-    amt: { width: 78, textAlign: "left" as const, paddingLeft: 4 },
-    dt: { width: 70, textAlign: "center" as const },
-    cat: { width: 78, textAlign: "right" as const, paddingRight: 4 },
-    desc: { flex: 1, textAlign: "right" as const, paddingRight: 4 },
-    note: { width: "20%", textAlign: "right" as const, paddingRight: 4 },
-    meth: { width: 80, textAlign: "right" as const },
-    pnote: { flex: 1, textAlign: "right" as const, paddingRight: 4 },
-    party: { width: 110, textAlign: "right" as const, paddingRight: 4 },
-    status: { width: 60, textAlign: "center" as const },
+    amt: { width: 68, textAlign: "left" as const, paddingLeft: 3 },
+    qty: { width: 48, textAlign: "center" as const },
+    uprice: { width: 58, textAlign: "center" as const },
+    dt: { width: 62, textAlign: "center" as const },
+    cat: { width: 68, textAlign: "right" as const, paddingRight: 3 },
+    desc: { flex: 1, textAlign: "right" as const, paddingRight: 3 },
+    note: { width: "15%", textAlign: "right" as const, paddingRight: 3 },
+    meth: { width: 72, textAlign: "right" as const },
+    pnote: { flex: 1, textAlign: "right" as const, paddingRight: 3 },
+    party: { width: 92, textAlign: "right" as const, paddingRight: 3 },
+    status: { width: 50, textAlign: "center" as const },
   };
 
-  const debtStatusAr = (st: StandaloneDebt["status"]) =>
-    st === "paid" ? "مسدد" : "نشط";
+  const tableHeadAhead = PDF_PAGINATION.tableHead + PDF_PAGINATION.minRowHeight;
+  const debtStatusAr = (st: StandaloneDebt["status"]) => (st === "paid" ? "مسدد" : "نشط");
 
   return (
-    <Document title={`التقرير-النهائي-${client.name}`} language="ar">
+    <Document
+      title={`التقرير-الشامل-${client.name}`}
+      author="شركة المهندسة"
+      subject="التقرير المالي الشامل"
+      language="ar"
+    >
       <Page size="A4" style={s.page} wrap>
-        <PdfBrandedReportHeader
-          titleEn="FINAL REPORT"
-          subtitleAr="التقرير المالي الشامل"
-          refLine={`Client: ${client.name}  •  ${today}`}
-        />
-
-        {/* بيانات العميل + الفترة */}
-        <View style={s.infoRow}>
-          <View style={s.datesCol}>
-            <View style={s.dateRow}>
-              <Text style={s.dateLabel}>تاريخ الإصدار</Text>
-              <Text style={s.dateVal}>{today}</Text>
-            </View>
-            {minDate ? (
-              <View style={s.dateRow}>
-                <Text style={s.dateLabel}>أول حركة</Text>
-                <Text style={s.dateVal}>{pdfFmtDate(minDate)}</Text>
-              </View>
-            ) : null}
-            {maxDate ? (
-              <View style={s.dateRow}>
-                <Text style={s.dateLabel}>آخر حركة</Text>
-                <Text style={s.dateVal}>{pdfFmtDate(maxDate)}</Text>
-              </View>
-            ) : null}
-            <View style={s.dateRow}>
-              <Text style={s.dateLabel}>النسبة المتفق عليها</Text>
-              <Text style={s.dateVal}>{profitPercentage}%</Text>
-            </View>
-            <View style={s.dateRow}>
-              <Text style={s.dateLabel}>عدد المصروفات</Text>
-              <Text style={s.dateVal}>{expenses.length}</Text>
-            </View>
-            <View style={s.dateRow}>
-              <Text style={s.dateLabel}>عدد الدفعات</Text>
-              <Text style={s.dateVal}>{payments.length}</Text>
-            </View>
-            <View style={s.dateRow}>
-              <Text style={s.dateLabel}>عدد الديون</Text>
-              <Text style={s.dateVal}>{debts.length}</Text>
-            </View>
-          </View>
-
-          <View style={s.clientBox}>
-            <Text style={s.clientSectionLbl}>جهة التقرير</Text>
-            <Text style={s.clientName}>{client.name}</Text>
-            {client.address ? <Text style={s.clientSub}>{client.address}</Text> : null}
-            {client.phone ? <Text style={s.clientSub}>هاتف: {client.phone}</Text> : null}
-            {client.email ? <Text style={s.clientSub}>{client.email}</Text> : null}
-            <Text style={s.clientSub}>
-              النوع: {client.type === "company" ? "شركة" : "فرد"}
-            </Text>
-          </View>
-        </View>
-
-        {/* KPIs */}
-        <View style={[s.summaryRow, { flexWrap: "wrap" }]}>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>المصروفات المعتمدة</Text>
-            <PdfMoneyText
-              amount={totalExpenses}
-              style={[s.summaryValue, { color: dangerColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>النسبة المتفق عليها ({profitPercentage}%)</Text>
-            <PdfMoneyText
-              amount={profit}
-              style={[s.summaryValue, { color: accentColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>إجمالي المقبوض</Text>
-            <PdfMoneyText
-              amount={totalPaid}
-              style={[s.summaryValue, { color: successColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>إجمالي الديون</Text>
-            <PdfMoneyText
-              amount={totalDebts}
-              style={[s.summaryValue, { color: primaryColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>متبقي الديون</Text>
-            <PdfMoneyText
-              amount={remainingDebts}
-              style={[s.summaryValue, { color: dangerColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-          <View style={[s.summaryCard, { minWidth: "31%" }]}>
-            <Text style={s.summaryLabel}>إجمالي الالتزامات</Text>
-            <PdfMoneyText
-              amount={obligations}
-              style={[s.summaryValue, { color: primaryColor }]}
-              containerStyle={{ justifyContent: "center" }}
-            />
-          </View>
-        </View>
-
-        {/* جدول المصروفات الكامل */}
-        <Text style={s.sectionTitle}>سجل المصروفات الكامل ({expenses.length})</Text>
-        {expenses.length > 0 ? (
-          <>
-            <View style={s.tableHead}>
-              <Text style={[s.th, Cf.amt]}>المبلغ</Text>
-              <Text style={[s.th, Cf.dt]}>التاريخ</Text>
-              <Text style={[s.th, Cf.cat]}>التصنيف</Text>
-              <Text style={[s.th, Cf.note]}>ملاحظات</Text>
-              <Text style={[s.th, Cf.desc]}>البيان</Text>
-              <Text style={[s.th, Cf.n]}>#</Text>
-            </View>
-            {sortedExpenses.map((e, i) => (
-              <View
-                key={e.id}
-                style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
-                wrap={false}
-              >
-                <PdfMoneyText
-                  amount={e.amount}
-                  style={[s.tdBold, { color: dangerColor }]}
-                  containerStyle={Cf.amt}
-                />
-                <Text style={[s.td, Cf.dt]}>{pdfFmtDate(e.date)}</Text>
-                <Text style={[s.td, Cf.cat]}>{normalizeCategoryLabel(e.category) || "—"}</Text>
-                <Text style={[s.td, Cf.note]}>{e.notes || "—"}</Text>
-                <Text style={[s.tdBold, Cf.desc]}>{e.description || "—"}</Text>
-                <Text style={[s.td, Cf.n]}>{i + 1}</Text>
-              </View>
-            ))}
-            <View style={s.totalRow} wrap={false}>
-              <PdfMoneyText amount={totalExpenses} style={s.tdBold} containerStyle={Cf.amt} />
-              <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>
-                إجمالي المصروفات
-              </Text>
-            </View>
-          </>
-        ) : (
-          <Text style={[s.td, { padding: 10 }]}>لا توجد مصروفات مسجَّلة.</Text>
-        )}
-
-        {/* جدول الدفعات الكامل */}
-        <Text style={s.sectionTitle}>سجل الدفعات الكامل ({payments.length})</Text>
-        {payments.length > 0 ? (
-          <>
-            <View style={s.tableHead}>
-              <Text style={[s.th, Cf.amt]}>المبلغ</Text>
-              <Text style={[s.th, Cf.dt]}>التاريخ</Text>
-              <Text style={[s.th, Cf.meth]}>الوسيلة</Text>
-              <Text style={[s.th, Cf.pnote]}>ملاحظات</Text>
-              <Text style={[s.th, Cf.n]}>#</Text>
-            </View>
-            {sortedPayments.map((p, i) => (
-              <View
-                key={p.id}
-                style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
-                wrap={false}
-              >
-                <PdfMoneyText amount={p.amount} style={s.tdPos} containerStyle={Cf.amt} />
-                <Text style={[s.td, Cf.dt]}>{pdfFmtDate(p.paymentDate)}</Text>
-                <Text style={[s.td, Cf.meth]}>{payLabel(p.paymentMethod)}</Text>
-                <Text style={[s.td, Cf.pnote]}>{p.notes || "—"}</Text>
-                <Text style={[s.td, Cf.n]}>{i + 1}</Text>
-              </View>
-            ))}
-            <View style={s.totalRow} wrap={false}>
-              <PdfMoneyText amount={totalPaid} style={s.tdBold} containerStyle={Cf.amt} />
-              <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>
-                إجمالي المقبوض
-              </Text>
-            </View>
-          </>
-        ) : (
-          <Text style={[s.td, { padding: 10 }]}>لا توجد دفعات مسجَّلة.</Text>
-        )}
-
-        {/* جدول الديون */}
-        {debts.length > 0 ? (
-          <>
-            <Text style={s.sectionTitle}>سجل الديون والالتزامات ({debts.length})</Text>
-            <View style={s.tableHead}>
-              <Text style={[s.th, Cf.amt]}>متبقي</Text>
-              <Text style={[s.th, Cf.amt]}>مدفوع</Text>
-              <Text style={[s.th, Cf.amt]}>الإجمالي</Text>
-              <Text style={[s.th, Cf.dt]}>التاريخ</Text>
-              <Text style={[s.th, Cf.status]}>الحالة</Text>
-              <Text style={[s.th, Cf.desc]}>الوصف / الملاحظات</Text>
-              <Text style={[s.th, Cf.party]}>الطرف</Text>
-            </View>
-            {sortedDebts.map((d, i) => (
-              <View
-                key={d.id}
-                style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
-                wrap={false}
-              >
-                <PdfMoneyText
-                  amount={d.remainingAmount}
-                  style={[s.tdBold, { color: dangerColor }]}
-                  containerStyle={Cf.amt}
-                />
-                <PdfMoneyText amount={d.paidAmount} style={s.tdPos} containerStyle={Cf.amt} />
-                <PdfMoneyText amount={d.amount} style={s.tdBold} containerStyle={Cf.amt} />
-                <Text style={[s.td, Cf.dt]}>{pdfFmtDate(d.date)}</Text>
-                <Text
-                  style={[
-                    s.tdBold,
-                    Cf.status,
-                    { color: d.status === "paid" ? successColor : dangerColor },
-                  ]}
-                >
-                  {debtStatusAr(d.status)}
-                </Text>
-                <Text style={[s.td, Cf.desc]}>
-                  {d.description || "—"}
-                  {d.notes ? ` — ${d.notes}` : ""}
-                </Text>
-                <Text style={[s.tdBold, Cf.party]}>{d.partyName || "—"}</Text>
-              </View>
-            ))}
-            <View style={s.totalRow} wrap={false}>
-              <PdfMoneyText
-                amount={remainingDebts}
-                style={[s.tdBold, { color: dangerColor }]}
-                containerStyle={Cf.amt}
-              />
-              <PdfMoneyText amount={paidDebts} style={s.tdBold} containerStyle={Cf.amt} />
-              <PdfMoneyText amount={totalDebts} style={s.tdBold} containerStyle={Cf.amt} />
-              <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>
-                إجمالي الديون
-              </Text>
-            </View>
-          </>
-        ) : null}
-
-        {/* الإجمالي النهائي */}
-        <View
-          style={{
-            marginTop: 14,
-            padding: 12,
-            borderRadius: 6,
-            borderWidth: 1.5,
-            borderColor: primaryColor,
-            backgroundColor: "#f6f3ed",
-          }}
-          wrap={false}
-        >
-          <Text
-            style={{
-              fontSize: 11,
-              fontWeight: "bold",
-              color: primaryColor,
-              textAlign: "right",
-              marginBottom: 6,
-            }}
-          >
-            الخلاصة المالية
-          </Text>
-
-          <View style={s.totalLine}>
-            <Text style={s.grandLbl}>إجمالي المصروفات</Text>
-            <PdfMoneyText amount={totalExpenses} style={s.grandAmt} />
-          </View>
-          <View style={s.totalLine}>
-            <Text style={s.grandLbl}>النسبة المتفق عليها ({profitPercentage}%)</Text>
-            <PdfMoneyText amount={profit} style={s.grandAmt} />
-          </View>
-          <View style={s.totalLine}>
-            <Text style={s.grandLbl}>متبقي الديون</Text>
-            <PdfMoneyText amount={remainingDebts} style={s.grandAmt} />
-          </View>
-          <View style={s.totalLine}>
-            <Text style={s.grandLbl}>إجمالي المستحق على العميل</Text>
-            <PdfMoneyText amount={obligations} style={[s.grandAmt, { color: primaryColor }]} />
-          </View>
-          <View style={s.totalLine}>
-            <Text style={s.grandLbl}>إجمالي المقبوض</Text>
-            <PdfMoneyText amount={totalPaid} style={[s.grandAmt, { color: successColor }]} />
-          </View>
-
-          <View style={s.grandBar}>
-            <Text style={[s.grandLbl, { fontSize: 12 }]}>
-              {surplus > 0 ? "فائض دفع للعميل" : "الرصيد المتبقي للسداد"}
-            </Text>
-            <PdfMoneyText
-              amount={surplus > 0 ? surplus : remaining}
-              style={[
-                s.grandAmt,
-                {
-                  fontSize: 15,
-                  color: surplus > 0 ? successColor : remaining > 0 ? dangerColor : primaryColor,
-                },
-              ]}
-            />
-          </View>
-        </View>
-
         <PdfBrandedFooter />
+
+        <View wrap={false} style={{ marginBottom: 10 }}>
+          <PdfBrandedReportHeader
+            titleEn="LEDGER REPORT"
+            subtitleAr="التقرير المالي الشامل"
+            refLine={`${client.name}  ·  ${today}`}
+          />
+
+          <View style={s.infoRow}>
+            <View style={s.datesCol}>
+              <View style={s.dateRow}>
+                <Text style={s.dateLabel}>تاريخ التقرير</Text>
+                <Text style={s.dateVal}>{today}</Text>
+              </View>
+              {minDate ? (
+                <View style={s.dateRow}>
+                  <Text style={s.dateLabel}>أول حركة</Text>
+                  <Text style={s.dateVal}>{pdfFmtDate(minDate)}</Text>
+                </View>
+              ) : null}
+              {maxDate ? (
+                <View style={s.dateRow}>
+                  <Text style={s.dateLabel}>آخر حركة</Text>
+                  <Text style={s.dateVal}>{pdfFmtDate(maxDate)}</Text>
+                </View>
+              ) : null}
+              <View style={s.dateRow}>
+                <Text style={s.dateLabel}>الحركات</Text>
+                <Text style={s.dateVal}>
+                  {expenses.length + payments.length + debts.length}
+                </Text>
+              </View>
+            </View>
+
+            <View style={s.clientBox}>
+              <Text style={s.clientSectionLbl}>تقرير حساب العميل</Text>
+              <Text style={s.clientName}>{client.name}</Text>
+              {client.address ? <Text style={s.clientSub}>{client.address}</Text> : null}
+              {client.phone ? <Text style={s.clientSub}>{client.phone}</Text> : null}
+              {client.email ? <Text style={s.clientSub}>{client.email}</Text> : null}
+            </View>
+          </View>
+
+          <PdfSummaryStrip
+            cells={[
+              {
+                label: "إجمالي المقبوض",
+                value: totalPaid,
+                color: successColor,
+                accent: true,
+                money: true,
+              },
+              {
+                label: `نسبة الإدارة (${profitPercentage}%)`,
+                value: profit,
+                color: accentColor,
+                money: true,
+              },
+              {
+                label: "إجمالي المستحق",
+                value: obligations,
+                color: dangerColor,
+                accent: true,
+                money: true,
+              },
+              {
+                label: surplus > 0 ? "فائض دفع" : remaining > 0 ? "المتبقي" : "الرصيد",
+                value: surplus > 0 ? surplus : remaining,
+                color: resultColor,
+                accent: true,
+                money: true,
+              },
+            ]}
+          />
+
+          <View style={s.formulaBox}>
+            <Text style={s.formulaTxt}>
+              طريقة الحساب: المستحق = المصروفات + نسبة الإدارة + الديون غير المسددة · المتبقي = المستحق − المقبوض
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ marginBottom: 8 }}>
+          <PdfSectionTitle>المصروفات ({expenses.length})</PdfSectionTitle>
+          {expenses.length === 0 ? (
+            <PdfEmptyBlock message="لا توجد مصروفات مسجّلة لهذا العميل" />
+          ) : (
+            <>
+              <View style={s.tableHead} minPresenceAhead={tableHeadAhead}>
+                <Text style={[s.th, Cf.amt]}>المبلغ</Text>
+                <Text style={[s.th, Cf.uprice]}>سعر الوحدة</Text>
+                <Text style={[s.th, Cf.qty]}>الكمية</Text>
+                <Text style={[s.th, Cf.dt]}>التاريخ</Text>
+                <Text style={[s.th, Cf.cat]}>التصنيف</Text>
+                <Text style={[s.th, Cf.note]}>ملاحظات</Text>
+                <Text style={[s.th, Cf.desc]}>البيان</Text>
+              </View>
+              {sortedExpenses.map((e, i) => (
+                <View
+                  key={e.id}
+                  style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
+                  wrap={false}
+                  minPresenceAhead={PDF_PAGINATION.minRowHeight}
+                >
+                  <PdfMoneyText
+                    amount={e.amount}
+                    style={[s.tdBold, { color: dangerColor }]}
+                    containerStyle={Cf.amt}
+                  />
+                  <Text style={[s.td, Cf.uprice]}>{pdfExpenseUnitPrice(e)}</Text>
+                  <Text style={[s.td, Cf.qty]}>{pdfExpenseQty(e)}</Text>
+                  <Text style={[s.td, Cf.dt]}>{pdfFmtDate(e.date)}</Text>
+                  <Text style={[s.td, Cf.cat]}>{normalizeCategoryLabel(e.category) || "—"}</Text>
+                  <Text style={[s.td, Cf.note]}>{expenseNote(e)}</Text>
+                  <Text style={[s.tdBold, Cf.desc]}>{e.description || "—"}</Text>
+                </View>
+              ))}
+              <View style={s.totalRow} wrap={false} minPresenceAhead={PDF_PAGINATION.totalBar}>
+                <PdfMoneyText amount={totalExpenses} style={s.tdBold} containerStyle={Cf.amt} />
+                <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>إجمالي المصروفات</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={{ marginBottom: 8 }}>
+          <PdfSectionTitle compact>المدفوعات ({payments.length})</PdfSectionTitle>
+          {payments.length === 0 ? (
+            <PdfEmptyBlock message="لا توجد مدفوعات مسجّلة لهذا العميل" />
+          ) : (
+            <>
+              <View style={s.tableHead} minPresenceAhead={tableHeadAhead}>
+                <Text style={[s.th, Cf.amt]}>المبلغ</Text>
+                <Text style={[s.th, Cf.dt]}>التاريخ</Text>
+                <Text style={[s.th, Cf.meth]}>الوسيلة</Text>
+                <Text style={[s.th, Cf.pnote]}>ملاحظات</Text>
+              </View>
+              {sortedPayments.map((p, i) => (
+                <View
+                  key={p.id}
+                  style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
+                  wrap={false}
+                  minPresenceAhead={PDF_PAGINATION.minRowHeight}
+                >
+                  <PdfMoneyText amount={p.amount} style={s.tdPos} containerStyle={Cf.amt} />
+                  <Text style={[s.td, Cf.dt]}>{pdfFmtDate(p.paymentDate)}</Text>
+                  <Text style={[s.td, Cf.meth]}>{payLabel(p.paymentMethod)}</Text>
+                  <Text style={[s.td, Cf.pnote]}>{p.notes || "—"}</Text>
+                </View>
+              ))}
+              <View style={s.totalRow} wrap={false} minPresenceAhead={PDF_PAGINATION.totalBar}>
+                <PdfMoneyText amount={totalPaid} style={s.tdBold} containerStyle={Cf.amt} />
+                <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>إجمالي المدفوعات</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={{ marginBottom: 8 }}>
+          <PdfSectionTitle compact>الديون ({debts.length})</PdfSectionTitle>
+          {debts.length === 0 ? (
+            <PdfEmptyBlock message="لا توجد ديون مسجّلة لهذا العميل" />
+          ) : (
+            <>
+              <View style={s.tableHead} minPresenceAhead={tableHeadAhead}>
+                <Text style={[s.th, Cf.amt]}>متبقي</Text>
+                <Text style={[s.th, Cf.amt]}>مدفوع</Text>
+                <Text style={[s.th, Cf.amt]}>الإجمالي</Text>
+                <Text style={[s.th, Cf.dt]}>التاريخ</Text>
+                <Text style={[s.th, Cf.status]}>الحالة</Text>
+                <Text style={[s.th, Cf.desc]}>الوصف</Text>
+                <Text style={[s.th, Cf.party]}>الطرف</Text>
+              </View>
+              {sortedDebts.map((d, i) => (
+                <View
+                  key={d.id}
+                  style={[s.tableRow, i % 2 !== 0 && s.rowEven]}
+                  wrap={false}
+                  minPresenceAhead={PDF_PAGINATION.minRowHeight}
+                >
+                  <PdfMoneyText
+                    amount={d.remainingAmount}
+                    style={[s.tdBold, { color: dangerColor }]}
+                    containerStyle={Cf.amt}
+                  />
+                  <PdfMoneyText amount={d.paidAmount} style={s.tdPos} containerStyle={Cf.amt} />
+                  <PdfMoneyText amount={d.amount} style={s.tdBold} containerStyle={Cf.amt} />
+                  <Text style={[s.td, Cf.dt]}>{pdfFmtDate(d.date)}</Text>
+                  <Text
+                    style={[
+                      s.tdBold,
+                      Cf.status,
+                      { color: d.status === "paid" ? successColor : dangerColor },
+                    ]}
+                  >
+                    {debtStatusAr(d.status)}
+                  </Text>
+                  <Text style={[s.td, Cf.desc]}>
+                    {d.description || "—"}
+                    {d.notes ? ` - ${d.notes}` : ""}
+                  </Text>
+                  <Text style={[s.tdBold, Cf.party]}>{d.partyName || "—"}</Text>
+                </View>
+              ))}
+              <View style={s.totalRow} wrap={false} minPresenceAhead={PDF_PAGINATION.totalBar}>
+                <PdfMoneyText
+                  amount={remainingDebts}
+                  style={[s.tdBold, { color: dangerColor }]}
+                  containerStyle={Cf.amt}
+                />
+                <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>
+                  إجمالي الديون غير المسددة
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        <PdfSettlementCard
+          title="خلاصة التسوية النهائية"
+          lines={[
+            { label: "إجمالي المصروفات", amount: totalExpenses },
+            { label: `نسبة الإدارة (${profitPercentage}%)`, amount: profit },
+            { label: "ديون غير مسددة", amount: remainingDebts },
+            {
+              label: "إجمالي المستحق",
+              amount: obligations,
+              color: primaryColor,
+              emphasize: true,
+            },
+            {
+              label: "إجمالي المقبوض",
+              amount: totalPaid,
+              color: successColor,
+              emphasize: true,
+            },
+          ]}
+          resultLabel={resultLabel}
+          resultAmount={surplus > 0 ? surplus : remaining}
+          resultColor={resultColor}
+          hint={
+            settled
+              ? "لا يوجد رصيد متبقٍ على هذا الحساب في تاريخ إعداد التقرير."
+              : surplus > 0
+                ? "المبلغ المدفوع أعلى من المستحق، والفائض لصالح العميل."
+                : "المبلغ المتبقي هو ما يلزم سداده لإغلاق الحساب وفق البيانات الحالية."
+          }
+        />
       </Page>
     </Document>
   );

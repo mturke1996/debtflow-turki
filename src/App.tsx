@@ -16,6 +16,7 @@ import { subscribeUserCategories } from "./services/categorySync";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import { ConfirmProvider } from "./components/ui/ConfirmDialog";
+import { useThemeMetaColor } from "./hooks/useThemeMetaColor";
 
 // Lazy load pages for code splitting
 const LoginPage = lazy(() =>
@@ -108,6 +109,7 @@ function App() {
 
   // Memoize theme to prevent unnecessary recalculations
   const theme = useMemo(() => createAppTheme(themeMode), [themeMode]);
+  useThemeMetaColor(themeMode);
 
   // Initialize data when user is authenticated
   useEffect(() => {
@@ -146,6 +148,9 @@ function App() {
         <ConfirmProvider>
         <Toaster
           position="top-center"
+          containerStyle={{
+            top: "calc(12px + env(safe-area-inset-top, 0px))",
+          }}
           toastOptions={{
             duration: 3000,
             style: {

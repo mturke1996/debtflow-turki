@@ -1,13 +1,7 @@
 import { useState, useMemo } from "react";
-import { Search, CalendarToday, TrendingUp, Payments } from "@mui/icons-material";
+import { TrendingUp, Payments } from "@mui/icons-material";
 import {
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
@@ -26,7 +20,10 @@ import { formatDate, paymentMethods } from "@/utils/formatters";
 import { downloadPdf } from "@/utils/pdfService";
 import { loadStyledPDFs } from "@/components/pdf/lazyPdf";
 import { PageHero } from "@/components/ui/PageHero";
-import { HeroCtaButton, FilterChip, RowActionBar, RowActionButton } from "@/components/ui/ActionButtons";
+import { HeroCtaButton, FilterChip } from "@/components/ui/ActionButtons";
+import { SearchField } from "@/components/ui/SearchField";
+import { FormDialog } from "@/components/ui/FormDialog";
+import { PaymentLedgerCard } from "@/components/payment/PaymentLedgerCard";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 const paymentSchema = z.object({
@@ -48,7 +45,11 @@ const METHOD_FILTERS = [
   { id: "credit_card", label: "بطاقة" },
 ] as const;
 
-function getClientName(payment: Payment, clients: { id: string; name: string }[], invoices: { id: string; tempClientName?: string }[]) {
+function getClientName(
+  payment: Payment,
+  clients: { id: string; name: string }[],
+  invoices: { id: string; tempClientName?: string }[]
+) {
   const client = clients.find((c) => c.id === payment.clientId);
   if (client) return client.name;
   const invoice = invoices.find((i) => i.id === payment.invoiceId);
@@ -207,9 +208,11 @@ export const PaymentsPage = () => {
   const methodLabel = (method: Payment["paymentMethod"]) =>
     paymentMethods[method as keyof typeof paymentMethods] ?? method;
 
+  const fieldSx = { "& .MuiOutlinedInput-root": { borderRadius: 2.5, bgcolor: "background.paper" } };
+
   return (
     <>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 32 }}>
+      <div className="page-stack" style={{ paddingBottom: 32 }}>
         <PageHero
           accent="success"
           eyebrow={
@@ -221,14 +224,14 @@ export const PaymentsPage = () => {
           title="إجمالي المحصّل"
           headline={formatCurrency(total)}
           trailing={
-            <Stack direction="row" spacing={1}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
               {payments.length > 0 ? (
                 <HeroCtaButton icon="share" compact onClick={() => void handleExportPdf()}>
-                  مشاركة
+                  تصدير PDF
                 </HeroCtaButton>
               ) : null}
               <HeroCtaButton onClick={() => handleOpenDialog()}>دفعة جديدة</HeroCtaButton>
-            </Stack>
+            </div>
           }
           footerStats={[
             { label: "عدد العمليات", value: payments.length },
@@ -244,21 +247,15 @@ export const PaymentsPage = () => {
           ]}
         />
 
-        <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="بحث في المدفوعات..."
+        <section className="page-section">
+          <div className="section-label" style={{ marginBottom: 10 }}>
+            البحث والتصفية
+          </div>
+          <SearchField
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search fontSize="small" sx={{ color: "var(--ink-faint)" }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "var(--panel)" } }}
+            onChange={setSearchQuery}
+            placeholder="بحث بالعميل أو الفاتورة أو الملاحظات..."
+            sx={{ mb: 1.5 }}
           />
           <div className="filter-scroll">
             {METHOD_FILTERS.map((tab) => (
@@ -272,31 +269,22 @@ export const PaymentsPage = () => {
           </div>
         </section>
 
-        <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <section className="page-section">
+          <div className="section-label" style={{ marginBottom: 10 }}>
+            السجل ({filteredPayments.length})
+          </div>
+
           {filteredPayments.length === 0 ? (
-            <div className="widget-tile" style={{ padding: "40px 24px", textAlign: "center" }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  margin: "0 auto 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--pastel-green-bg)",
-                  color: "var(--pastel-green-fg)",
-                  border: "1px solid var(--line)",
-                }}
-              >
+            <div className="empty-state-premium">
+              <div className="empty-state-premium__icon empty-state-premium__icon--green">
                 <Payments sx={{ fontSize: 28 }} />
               </div>
-              <div style={{ fontWeight: 700, color: "var(--ink)" }}>لا توجد مدفوعات</div>
-              <div style={{ marginTop: 4, fontSize: "0.75rem", color: "var(--ink-muted)" }}>
+              <h3 className="empty-state-premium__title">لا توجد مدفوعات</h3>
+              <p className="empty-state-premium__desc">
                 {searchQuery || methodFilter !== "all"
-                  ? "لا نتائج مطابقة — جرّب بحثاً آخر."
+                  ? "لا نتائج مطابقة — جرّب بحثاً أو فلتراً آخر."
                   : "المدفوعات ستظهر هنا فور إضافتها."}
-              </div>
+              </p>
               {!searchQuery && methodFilter === "all" ? (
                 <div style={{ marginTop: 16 }}>
                   <HeroCtaButton onClick={() => handleOpenDialog()}>دفعة جديدة</HeroCtaButton>
@@ -304,167 +292,144 @@ export const PaymentsPage = () => {
               ) : null}
             </div>
           ) : (
-            filteredPayments.map((payment) => {
-              const clientName = getClientName(payment, clients, invoices);
-              const invoice = invoices.find((i) => i.id === payment.invoiceId);
-              return (
-                <div
-                  key={payment.id}
-                  className="widget-tile"
-                  style={{
-                    padding: "16px",
-                    borderInlineEndWidth: 3,
-                    borderInlineEndColor: "var(--pastel-green-fg)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: "0.875rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {clientName}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.7rem", color: "var(--ink-muted)" }}>
-                          <CalendarToday sx={{ fontSize: 12 }} />
-                          {formatDate(payment.paymentDate)}
-                        </span>
-                        <span className="status-badge" style={{ background: "var(--accent-soft)", color: "var(--accent-text)" }}>
-                          {methodLabel(payment.paymentMethod)}
-                        </span>
-                        {invoice ? (
-                          <span style={{ fontSize: "0.65rem", color: "var(--ink-faint)", fontWeight: 700 }}>
-                            #{invoice.invoiceNumber}
-                          </span>
-                        ) : null}
-                      </div>
-                      {payment.notes ? (
-                        <div style={{ marginTop: 6, fontSize: "0.65rem", color: "var(--ink-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {payment.notes}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="num" style={{ flexShrink: 0, fontSize: "1rem", fontWeight: 800, color: "var(--pastel-green-fg)" }}>
-                      {formatCurrency(payment.amount)}
-                    </div>
-                  </div>
-
-                  <RowActionBar>
-                    <RowActionButton variant="edit" onClick={() => handleOpenDialog(payment)} />
-                    <RowActionButton variant="delete" onClick={() => handleDelete(payment)} />
-                  </RowActionBar>
-                </div>
-              );
-            })
+            <div className="ledger-list">
+              {filteredPayments.map((payment) => {
+                const clientName = getClientName(payment, clients, invoices);
+                const invoice = invoices.find((i) => i.id === payment.invoiceId);
+                return (
+                  <PaymentLedgerCard
+                    key={payment.id}
+                    clientName={clientName}
+                    payment={payment}
+                    methodLabel={methodLabel(payment.paymentMethod)}
+                    invoiceNumber={invoice?.invoiceNumber}
+                    amountLabel={formatCurrency(payment.amount)}
+                    dateLabel={formatDate(payment.paymentDate)}
+                    onEdit={() => handleOpenDialog(payment)}
+                    onDelete={() => void handleDelete(payment)}
+                  />
+                );
+              })}
+            </div>
           )}
         </section>
       </div>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogTitle sx={{ fontWeight: 800 }}>
-            {editingPayment ? "تعديل الدفعة" : "دفعة جديدة"}
-          </DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              <Controller
-                name="clientId"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.clientId}>
-                    <InputLabel>العميل</InputLabel>
-                    <Select {...field} label="العميل">
-                      {clients.map((client) => (
-                        <MenuItem key={client.id} value={client.id}>
-                          {client.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-              />
+      <FormDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        title={editingPayment ? "تعديل الدفعة" : "دفعة جديدة"}
+        subtitle="سجّل مبلغاً محصّلاً واربطه بالعميل أو فاتورة."
+        onSubmit={handleSubmit(onSubmit)}
+        submitLabel={editingPayment ? "حفظ التعديل" : "إضافة الدفعة"}
+        loading={saving}
+        submitColor="success"
+      >
+        <Stack spacing={2.25}>
+          <Controller
+            name="clientId"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.clientId} sx={fieldSx}>
+                <InputLabel>العميل</InputLabel>
+                <Select {...field} label="العميل">
+                  {clients.map((client) => (
+                    <MenuItem key={client.id} value={client.id}>
+                      {client.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          />
 
-              <Controller
-                name="invoiceId"
-                control={control}
-                render={({ field }) => {
-                  const selectedClientId = watch("clientId");
-                  const clientInvoices = selectedClientId
-                    ? invoices.filter((inv) => inv.clientId === selectedClientId && inv.status !== "paid")
-                    : [];
-                  return (
-                    <FormControl fullWidth disabled={!selectedClientId}>
-                      <InputLabel>الفاتورة (اختياري)</InputLabel>
-                      <Select {...field} value={field.value || ""} label="الفاتورة (اختياري)" onChange={(e) => field.onChange(e.target.value || undefined)}>
-                        <MenuItem value="">بدون فاتورة</MenuItem>
-                        {clientInvoices.map((inv) => (
-                          <MenuItem key={inv.id} value={inv.id}>
-                            {inv.invoiceNumber} — {formatCurrency(inv.total)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  );
-                }}
-              />
-
-              <Controller
-                name="amount"
-                control={control}
-                render={({ field }) => (
-                  <TextField
+          <Controller
+            name="invoiceId"
+            control={control}
+            render={({ field }) => {
+              const selectedClientId = watch("clientId");
+              const clientInvoices = selectedClientId
+                ? invoices.filter((inv) => inv.clientId === selectedClientId && inv.status !== "paid")
+                : [];
+              return (
+                <FormControl fullWidth disabled={!selectedClientId} sx={fieldSx}>
+                  <InputLabel>الفاتورة (اختياري)</InputLabel>
+                  <Select
                     {...field}
-                    fullWidth
-                    label="المبلغ"
-                    type="number"
-                    error={!!errors.amount}
-                    helperText={errors.amount?.message}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                )}
-              />
+                    value={field.value || ""}
+                    label="الفاتورة (اختياري)"
+                    onChange={(e) => field.onChange(e.target.value || undefined)}
+                  >
+                    <MenuItem value="">بدون فاتورة</MenuItem>
+                    {clientInvoices.map((inv) => (
+                      <MenuItem key={inv.id} value={inv.id}>
+                        {inv.invoiceNumber} — {formatCurrency(inv.total)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              );
+            }}
+          />
 
-              <Controller
-                name="paymentMethod"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth>
-                    <InputLabel>طريقة الدفع</InputLabel>
-                    <Select {...field} label="طريقة الدفع">
-                      <MenuItem value="cash">نقدي</MenuItem>
-                      <MenuItem value="bank_transfer">تحويل بنكي</MenuItem>
-                      <MenuItem value="check">شيك</MenuItem>
-                      <MenuItem value="credit_card">بطاقة ائتمان</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
+          <Controller
+            name="amount"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="المبلغ"
+                type="number"
+                error={!!errors.amount}
+                helperText={errors.amount?.message}
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                sx={fieldSx}
+                className="num"
               />
+            )}
+          />
 
-              <Controller
-                name="paymentDate"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} fullWidth label="تاريخ الدفع" type="date" InputLabelProps={{ shrink: true }} />
-                )}
-              />
+          <Controller
+            name="paymentMethod"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth sx={fieldSx}>
+                <InputLabel>طريقة الدفع</InputLabel>
+                <Select {...field} label="طريقة الدفع">
+                  <MenuItem value="cash">نقدي</MenuItem>
+                  <MenuItem value="bank_transfer">تحويل بنكي</MenuItem>
+                  <MenuItem value="check">شيك</MenuItem>
+                  <MenuItem value="credit_card">بطاقة ائتمان</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
 
-              <Controller
-                name="notes"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} fullWidth label="ملاحظات" multiline rows={2} />
-                )}
+          <Controller
+            name="paymentDate"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="تاريخ الدفع"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                sx={fieldSx}
               />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-            <Button onClick={handleCloseDialog} disabled={saving}>
-              إلغاء
-            </Button>
-            <Button type="submit" variant="contained" color="success" disabled={saving} sx={{ fontWeight: 800, minWidth: 100 }}>
-              {saving ? "جاري الحفظ..." : editingPayment ? "حفظ" : "إضافة"}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+            )}
+          />
+
+          <Controller
+            name="notes"
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} fullWidth label="ملاحظات (اختياري)" multiline rows={2} sx={fieldSx} />
+            )}
+          />
+        </Stack>
+      </FormDialog>
     </>
   );
 };

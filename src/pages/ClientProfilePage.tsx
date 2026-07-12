@@ -62,7 +62,7 @@ import { ClientDebtsSection } from "@/components/client/ClientDebtsSection";
 import { DEFAULT_EXPENSE_CATEGORY } from "@/constants/expenseCategories";
 import { normalizeCategoryLabel } from "@/constants/expenseCategories";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { clientSchema, normalizeClientEmail, type ClientFormData } from "@/schemas/clientSchema";
 import dayjs from "dayjs";
 import "dayjs/locale/ar";
 import type {
@@ -73,16 +73,6 @@ import type {
 } from "@/types";
 
 dayjs.locale("ar");
-
-const clientSchema = z.object({
-  name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
-  email: z.string().email("البريد الإلكتروني غير صحيح"),
-  phone: z.string().min(10, "رقم الهاتف غير صحيح"),
-  address: z.string().min(5, "العنوان يجب أن يكون 5 أحرف على الأقل"),
-  type: z.enum(["company", "individual"]),
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
 
 export const ClientProfilePage = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -218,7 +208,7 @@ export const ClientProfilePage = () => {
   const onSubmitClient = async (data: ClientFormData) => {
     if (!clientId) return;
     try {
-      await updateClient(clientId, data);
+      await updateClient(clientId, { ...data, email: normalizeClientEmail(data.email) });
       setSnackbarMessage("تم تحديث بيانات العميل بنجاح");
       setSnackbarOpen(true);
       setEditClientDialogOpen(false);
@@ -1168,6 +1158,8 @@ export const ClientProfilePage = () => {
             ? {
                 id: editingExpense.id,
                 clientId: editingExpense.clientId,
+                expenseNumber: editingExpense.expenseNumber,
+                supplierInvoiceNumber: editingExpense.supplierInvoiceNumber,
                 description: editingExpense.description,
                 amount: editingExpense.amount,
                 category: editingExpense.category,
@@ -2169,7 +2161,7 @@ export const ClientProfilePage = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="البريد الإلكتروني"
+                    label="البريد الإلكتروني (اختياري)"
                     type="email"
                     error={!!clientErrors.email}
                     helperText={clientErrors.email?.message}

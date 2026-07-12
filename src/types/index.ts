@@ -111,6 +111,8 @@ export interface Debt {
 export interface Expense {
   id: string;
   clientId: string;
+  expenseNumber?: string; // رقم المصروف الداخلي (EXP-0001)
+  supplierInvoiceNumber?: string; // رقم فاتورة المورد
   description: string;
   amount: number;
   category: string;

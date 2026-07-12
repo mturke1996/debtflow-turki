@@ -33,23 +33,13 @@ import { useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/store/useDataStore';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import type { Client } from '@/types';
 import { Phone } from '@mui/icons-material';
+import { clientSchema, normalizeClientEmail, type ClientFormData } from '@/schemas/clientSchema';
 import { ListPageLayout } from '@/components/ui/ListPageLayout';
 import { SearchField } from '@/components/ui/SearchField';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AppCard } from '@/components/ui/AppCard';
-
-const clientSchema = z.object({
-  name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
-  email: z.string().email('البريد الإلكتروني غير صحيح'),
-  phone: z.string().min(10, 'رقم الهاتف غير صحيح'),
-  address: z.string().min(5, 'العنوان يجب أن يكون 5 أحرف على الأقل'),
-  type: z.enum(['company', 'individual']),
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
 
 export const ClientsPage = () => {
   const navigate = useNavigate();
@@ -79,7 +69,7 @@ export const ClientsPage = () => {
   const filteredClients = useMemo(() => {
     return clients.filter((client) =>
       client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       client.phone.includes(searchQuery)
     );
   }, [clients, searchQuery]);
@@ -128,11 +118,12 @@ export const ClientsPage = () => {
   };
 
   const onSubmit = (data: ClientFormData) => {
+    const payload = { ...data, email: normalizeClientEmail(data.email) };
     if (editingClient) {
-      updateClient(editingClient.id, data);
+      updateClient(editingClient.id, payload);
     } else {
       const newClient: Client = {
-        ...data,
+        ...payload,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -151,7 +142,13 @@ export const ClientsPage = () => {
         subtitle="إدارة بطاقات العملاء والأرصدة"
         maxWidth="md"
         action={
-          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            className="btn-primary-premium"
+            sx={{ fontWeight: 800, borderRadius: 2.5, px: 2.5 }}
+          >
             عميل جديد
           </Button>
         }
@@ -366,7 +363,7 @@ export const ClientsPage = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="البريد الإلكتروني"
+                    label="البريد الإلكتروني (اختياري)"
                     type="email"
                     error={!!errors.email}
                     helperText={errors.email?.message}
@@ -409,7 +406,7 @@ export const ClientsPage = () => {
               >
                 إلغاء
               </Button>
-              <Button type="submit" variant="contained" fullWidth size="large" sx={{ borderRadius: 2, py: 1.5 }}>
+              <Button type="submit" variant="contained" fullWidth size="large" className="btn-primary-premium" sx={{ borderRadius: 2.5, py: 1.5, fontWeight: 800 }}>
                 {editingClient ? 'حفظ التعديلات' : 'إضافة العميل'}
               </Button>
             </Stack>

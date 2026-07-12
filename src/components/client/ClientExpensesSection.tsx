@@ -5,6 +5,7 @@ import { normalizeCategoryLabel } from "@/constants/expenseCategories";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ClientSectionShell } from "@/components/client/ClientSectionShell";
 import { LedgerRow } from "@/components/client/LedgerRow";
+import { ExpenseQuantityChip } from "@/components/expense/ExpenseQuantityBlock";
 import type { Expense } from "@/types";
 
 type ClientExpensesSectionProps = {
@@ -60,8 +61,16 @@ export const ClientExpensesSection = ({
           date={dayjs(expense.date).format("DD/MM/YYYY")}
           amount={formatCurrency(expense.amount)}
           badge={normalizeCategoryLabel(expense.category)}
-          notes={expense.notes || undefined}
+          notes={expense.notes || expense.supplierInvoiceNumber || undefined}
           tone="debit"
+          extra={
+            <ExpenseQuantityChip
+              quantity={expense.quantity}
+              unit={expense.unit}
+              unitPrice={expense.unitPrice}
+              amount={expense.amount}
+            />
+          }
           onEdit={() => onEdit(expense)}
           onDelete={() => onDelete(expense.id)}
         />

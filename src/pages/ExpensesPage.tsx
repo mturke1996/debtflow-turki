@@ -30,6 +30,7 @@ import { ListPageLayout } from "@/components/ui/ListPageLayout";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AppCard } from "@/components/ui/AppCard";
 import { QuickExpenseSheet } from "@/components/expense/QuickExpenseSheet";
+import { ExpenseQuantityChip } from "@/components/expense/ExpenseQuantityBlock";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { exportScopedExcel } from "@/services/exportService";
 import type { Expense } from "@/types";
@@ -67,6 +68,8 @@ export const ExpensesPage = () => {
             expense.description,
             expense.category,
             expense.notes,
+            expense.expenseNumber,
+            expense.supplierInvoiceNumber,
             client?.name,
           ]
             .filter(Boolean)
@@ -252,6 +255,12 @@ export const ExpensesPage = () => {
                         >
                           {formatCurrency(expense.amount)}
                         </Typography>
+                        <ExpenseQuantityChip
+                          quantity={expense.quantity}
+                          unit={expense.unit}
+                          unitPrice={expense.unitPrice}
+                          amount={expense.amount}
+                        />
                       </Box>
                       <Stack direction="row" spacing={0.25}>
                         <IconButton

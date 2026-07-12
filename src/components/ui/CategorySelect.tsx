@@ -164,17 +164,15 @@ export const CategorySelect = ({
             </MenuItem>
           ))}
           {customCategories.length > 0 ? (
-            <>
-              <ListSubheader sx={{ fontWeight: 800, lineHeight: 2.5, bgcolor: "background.paper" }}>
-                فئاتك المخصصة
-              </ListSubheader>
-              {customCategories.map((cat) => (
-                <MenuItem key={cat} value={cat} sx={{ py: 1, borderRadius: 1, mx: 0.5 }}>
-                  <CategoryMenuRow name={cat} custom />
-                </MenuItem>
-              ))}
-            </>
+            <ListSubheader sx={{ fontWeight: 800, lineHeight: 2.5, bgcolor: "background.paper" }}>
+              فئاتك المخصصة
+            </ListSubheader>
           ) : null}
+          {customCategories.map((cat) => (
+            <MenuItem key={cat} value={cat} sx={{ py: 1, borderRadius: 1, mx: 0.5 }}>
+              <CategoryMenuRow name={cat} custom />
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
 

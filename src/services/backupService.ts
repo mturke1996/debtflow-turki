@@ -619,7 +619,6 @@ export const validateBackupData = (data: Partial<BackupData>): {
     data.clients.forEach((client, index) => {
       if (!client.id) errors.push(`العميل ${index + 1}: المعرف مفقود`);
       if (!client.name) errors.push(`العميل ${index + 1}: الاسم مفقود`);
-      if (!client.email) errors.push(`العميل ${index + 1}: البريد الإلكتروني مفقود`);
       if (!client.phone) errors.push(`العميل ${index + 1}: الهاتف مفقود`);
     });
   }

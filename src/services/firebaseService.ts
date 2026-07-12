@@ -18,6 +18,13 @@ import {
 import { db } from '../config/firebase';
 import type { Client, Invoice, Payment, Debt, Project, Expense, StandaloneDebt, ExpenseInvoice, DebtParty, CustomExpenseCategory } from '../types';
 
+/** Firestore rejects undefined field values — omit them before write. */
+function stripUndefined<T extends Record<string, unknown>>(data: T): T {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  ) as T;
+}
+
 // Generic CRUD operations
 export class FirestoreService<T extends { id: string }> {
   constructor(private collectionName: string) {}
@@ -61,11 +68,11 @@ export class FirestoreService<T extends { id: string }> {
       // Strip any provided id so Firestore controls the document id
       // (defensive in case caller accidentally passes an id field)
       const { id: _ignoreId, ...rest } = data as any;
-      const docRef = await addDoc(collectionRef, {
+      const docRef = await addDoc(collectionRef, stripUndefined({
         ...rest,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      }));
       return docRef.id;
     } catch (error) {
       console.error(`Error adding ${this.collectionName}:`, error);
@@ -80,10 +87,10 @@ export class FirestoreService<T extends { id: string }> {
       const { id: _ignoreId, ...rest } = data as Record<string, unknown>;
       await setDoc(
         docRef,
-        {
+        stripUndefined({
           ...rest,
           updatedAt: new Date().toISOString(),
-        },
+        }),
         { merge: true }
       );
     } catch (error) {
@@ -95,10 +102,10 @@ export class FirestoreService<T extends { id: string }> {
   async update(id: string, data: Partial<Omit<T, 'id'>>): Promise<void> {
     try {
       const docRef = doc(db, this.collectionName, id);
-      await updateDoc(docRef, {
+      await updateDoc(docRef, stripUndefined({
         ...data,
         updatedAt: new Date().toISOString(),
-      });
+      }));
     } catch (error) {
       console.error(`Error updating ${this.collectionName}:`, error);
       throw error;

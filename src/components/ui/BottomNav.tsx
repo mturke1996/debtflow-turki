@@ -49,6 +49,7 @@ export const BottomNav = () => {
         component="nav"
         aria-label="التنقل السفلي"
         elevation={0}
+        className="bottom-nav-shell"
         sx={{
           display: { xs: "block", md: "none" },
           position: "fixed",
@@ -60,6 +61,8 @@ export const BottomNav = () => {
           borderColor: "divider",
           bgcolor: "background.paper",
           pb: "env(safe-area-inset-bottom, 0px)",
+          pl: "env(safe-area-inset-left, 0px)",
+          pr: "env(safe-area-inset-right, 0px)",
         }}
       >
         <BottomNavigation
@@ -100,9 +103,11 @@ export const BottomNav = () => {
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             pb: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+            maxHeight: "calc(85dvh - env(safe-area-inset-top, 0px))",
           },
         }}
       >
+        <Box className="sheet-grabber" aria-hidden />
         <Box sx={{ px: 2.5, pt: 2, pb: 1 }}>
           <Typography variant="subtitle1" fontWeight={800}>
             المزيد

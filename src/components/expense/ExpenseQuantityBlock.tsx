@@ -1,7 +1,13 @@
-import { useState } from "react";
-import { Box, Button, Stack, TextField, Typography, alpha } from "@mui/material";
+import { useState, type ReactNode } from "react";
+import { Box, Button, Divider, Stack, TextField, Typography, alpha } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
 import { Controller, type Control, type FieldValues } from "react-hook-form";
+import { formatCurrency } from "@/utils/calculations";
+import {
+  expenseHasQuantityLine,
+  formatQuantityDisplay,
+  multiplyQuantityPrice,
+} from "@/utils/expenseFormUtils";
 import { EXPENSE_FORM, expenseSheetFieldSx } from "./ExpenseFormKit";
 
 const UNIT_CHIPS = ["م²", "م³", "طن", "كيس", "عدد", "يوم", "ساعة"] as const;
@@ -126,6 +132,70 @@ export function ExpenseQuantityBlock<T extends FieldValues>({
             )}
           />
         ))}
+      </Stack>
+    </Box>
+  );
+}
+
+export function ExpenseQuantityChip({
+  quantity,
+  unit,
+  unitPrice,
+  amount,
+}: {
+  quantity?: number;
+  unitPrice?: number;
+  unit?: string;
+  amount?: number;
+}) {
+  if (!expenseHasQuantityLine({ quantity: quantity ?? null, unitPrice: unitPrice ?? null })) {
+    return null;
+  }
+
+  const q = quantity!;
+  const p = unitPrice!;
+  const total = amount ?? multiplyQuantityPrice(q, p);
+
+  const cell = (label: string, value: ReactNode, highlight?: boolean) => (
+    <Box sx={{ flex: 1, textAlign: "center", py: 0.75, px: 0.5 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        fontWeight={700}
+        sx={{ fontSize: "0.55rem", display: "block", mb: 0.25 }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        variant="caption"
+        fontWeight={800}
+        color={highlight ? EXPENSE_FORM.primary : "text.primary"}
+        sx={{ fontSize: "0.72rem", fontVariantNumeric: "tabular-nums" }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <Box
+      sx={{
+        mt: 0.75,
+        borderRadius: 2,
+        overflow: "hidden",
+        border: `1px solid ${alpha(EXPENSE_FORM.primary, 0.15)}`,
+        bgcolor: alpha(EXPENSE_FORM.primary, 0.03),
+      }}
+    >
+      <Stack
+        direction="row"
+        divider={
+          <Divider orientation="vertical" flexItem sx={{ borderColor: alpha(EXPENSE_FORM.primary, 0.1) }} />
+        }
+      >
+        {cell("الكمية", formatQuantityDisplay(q, unit || undefined))}
+        {cell(unit ? "سعر الوحدة" : "سعر القطعة", formatCurrency(p))}
+        {cell("الإجمالي", formatCurrency(total), true)}
       </Stack>
     </Box>
   );

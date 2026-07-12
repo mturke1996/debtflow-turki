@@ -1,5 +1,6 @@
 import { Edit, Delete } from "@mui/icons-material";
 import { Box, Chip, IconButton, Stack, Typography } from "@mui/material";
+import type { ReactNode } from "react";
 
 type LedgerRowTone = "debit" | "credit" | "neutral";
 
@@ -12,6 +13,7 @@ type LedgerRowProps = {
   tone?: LedgerRowTone;
   onEdit: () => void;
   onDelete: () => void;
+  extra?: ReactNode;
 };
 
 const toneColor = {
@@ -29,6 +31,7 @@ export const LedgerRow = ({
   tone = "neutral",
   onEdit,
   onDelete,
+  extra,
 }: LedgerRowProps) => (
   <Box
     className="surface-panel pressable"
@@ -76,6 +79,7 @@ export const LedgerRow = ({
       >
         {amount}
       </Typography>
+      {extra}
     </Box>
     <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
       <IconButton size="small" onClick={onEdit} aria-label="تعديل">

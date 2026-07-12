@@ -81,9 +81,15 @@ export const createAppTheme = (mode: ThemeMode) => {
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          html: {
+            WebkitTapHighlightColor: "transparent",
+          },
           body: {
             scrollBehavior: "smooth",
             WebkitFontSmoothing: "antialiased",
+            overscrollBehaviorY: "none",
+            paddingLeft: "env(safe-area-inset-left, 0px)",
+            paddingRight: "env(safe-area-inset-right, 0px)",
             "&::-webkit-scrollbar": { width: 8, height: 8 },
             "&::-webkit-scrollbar-track": { background: "transparent" },
             "&::-webkit-scrollbar-thumb": {
@@ -183,6 +189,7 @@ export const createAppTheme = (mode: ThemeMode) => {
       MuiAppBar: {
         styleOverrides: {
           root: {
+            paddingTop: "env(safe-area-inset-top, 0px)",
             backgroundColor: mode === "light" ? alpha(t.background.paper, 0.85) : alpha(t.background.paper, 0.8),
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
@@ -201,8 +208,42 @@ export const createAppTheme = (mode: ThemeMode) => {
         styleOverrides: {
           paper: {
             borderRadius: 22,
+            margin: 16,
+            marginBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+            maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px)",
             boxShadow: mode === "light" ? sw(mode, 20, 50, 0.12) : `0 24px 64px ${alpha("#000", 0.55)}`,
             border: mode === "light" ? `1px solid ${alpha("#1c1917", 0.06)}` : `1px solid ${alpha("#f5f5f4", 0.06)}`,
+          },
+          container: {
+            alignItems: "center",
+          },
+        },
+      },
+      MuiDialogContent: {
+        styleOverrides: {
+          root: {
+            paddingTop: 8,
+            paddingBottom: 16,
+          },
+        },
+      },
+      MuiDialogActions: {
+        styleOverrides: {
+          root: {
+            padding: "12px 20px 20px",
+            gap: 8,
+            "& .MuiButton-root": {
+              minWidth: 96,
+              borderRadius: 10,
+            },
+          },
+        },
+      },
+      MuiBackdrop: {
+        styleOverrides: {
+          root: {
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
           },
         },
       },
@@ -263,6 +304,42 @@ export const createAppTheme = (mode: ThemeMode) => {
             borderRadius: 10,
             transition: "background-color 0.2s ease, transform 0.15s ease",
             "&:active": { transform: "scale(0.98)" },
+          },
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: {
+            borderRadius: 14,
+            marginTop: 6,
+            minWidth: 180,
+            boxShadow: sw(mode, 8, 28, 0.12),
+            border: mode === "light" ? `1px solid ${alpha("#1c1917", 0.06)}` : `1px solid ${alpha("#f5f5f4", 0.08)}`,
+          },
+        },
+      },
+      MuiBottomNavigation: {
+        styleOverrides: {
+          root: {
+            height: 64,
+            backgroundImage: "none",
+          },
+        },
+      },
+      MuiBottomNavigationAction: {
+        styleOverrides: {
+          root: {
+            minWidth: 0,
+            padding: "6px 0 8px",
+            transition: "color 0.2s ease, transform 0.15s ease",
+            "&.Mui-selected": {
+              transform: "translateY(-1px)",
+            },
+          },
+          label: {
+            fontSize: "0.65rem",
+            fontWeight: 600,
+            "&.Mui-selected": { fontSize: "0.65rem" },
           },
         },
       },

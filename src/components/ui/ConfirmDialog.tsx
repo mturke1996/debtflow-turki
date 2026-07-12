@@ -55,27 +55,44 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={value}>
       {children}
-      <Dialog open={open} onClose={() => close(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 800 }}>
-          <WarningAmber color={options.tone === "danger" ? "error" : "warning"} />
+      <Dialog
+        open={open}
+        onClose={() => close(false)}
+        maxWidth="xs"
+        fullWidth
+        className="dialog-premium"
+        PaperProps={{ sx: { mx: 2 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25, fontWeight: 800, pt: 2.5 }}>
+          <WarningAmber
+            fontSize="small"
+            color={options.tone === "danger" ? "error" : "warning"}
+            sx={{ opacity: 0.9 }}
+          />
           {options.title ?? "تأكيد"}
         </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+        <DialogContent sx={{ px: 2.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
             {options.message}
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button onClick={() => close(false)} sx={{ fontWeight: 700 }}>
-            {options.cancelLabel ?? "إلغاء"}
-          </Button>
+        <DialogActions sx={{ px: 2.5, pb: 2.5, pt: 0, flexDirection: "row-reverse" }}>
           <Button
             variant="contained"
             color={options.tone === "danger" ? "error" : "primary"}
             onClick={() => close(true)}
-            sx={{ fontWeight: 800 }}
+            className="btn-primary-premium"
+            sx={{ fontWeight: 800, flex: 1, maxWidth: 160 }}
           >
             {options.confirmLabel ?? "تأكيد"}
+          </Button>
+          <Button
+            onClick={() => close(false)}
+            variant="outlined"
+            color="inherit"
+            sx={{ fontWeight: 700, flex: 1, maxWidth: 160, borderColor: "divider" }}
+          >
+            {options.cancelLabel ?? "إلغاء"}
           </Button>
         </DialogActions>
       </Dialog>

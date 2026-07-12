@@ -84,6 +84,7 @@ import { QuickExpenseSheet } from '@/components/expense/QuickExpenseSheet';
 
 import { MAIN_NAV_ITEMS, MORE_NAV_ITEMS, SYSTEM_NAV_ITEMS, getPageTitle, navIsActive } from '@/constants/navConfig';
 
+import { APP_BAR_TOTAL, BOTTOM_NAV_TOTAL } from '@/constants/layout';
 import { COMPANY_INFO } from '@/constants/companyInfo';
 
 
@@ -198,7 +199,7 @@ export const Layout = () => {
 
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      <Toolbar sx={{ py: 2.5, px: 2, minHeight: 72 }}>
+      <Toolbar sx={{ py: 2.5, px: 2, minHeight: 72, pt: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
 
         <CompanyLogo variant="sidebar" />
 
@@ -748,11 +749,11 @@ export const Layout = () => {
 
           width: { md: `calc(100% - ${drawerWidth}px)` },
 
-          mt: '56px',
+          mt: APP_BAR_TOTAL,
 
-          minHeight: 'calc(100dvh - 56px)',
+          minHeight: `calc(100dvh - ${APP_BAR_TOTAL})`,
 
-          pb: { xs: 'calc(72px + env(safe-area-inset-bottom, 0px))', md: 3 },
+          pb: { xs: `calc(${BOTTOM_NAV_TOTAL} + 8px)`, md: 3 },
 
           maxWidth: { lg: 960, xl: 1080 },
 

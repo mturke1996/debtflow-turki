@@ -16,7 +16,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { Briefcase, StickyNote, Wallet, X } from "lucide-react";
+import { Briefcase, FileText, StickyNote, Wallet, X } from "lucide-react";
 import dayjs, { type Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -24,7 +24,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/ar";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useDataStore } from "@/store/useDataStore";
-import { useAuthStore } from "@/store/useAuthStore";
 import { DEFAULT_EXPENSE_CATEGORY } from "@/constants/expenseCategories";
 import { CategorySelect } from "@/components/ui/CategorySelect";
 import {
@@ -34,6 +33,7 @@ import {
   multiplyQuantityPrice,
   parseDecimalInput,
 } from "@/utils/expenseFormUtils";
+import { getNextExpenseNumber } from "@/utils/expenseNumber";
 import { EXPENSE_FORM, expenseSheetFieldSx } from "./ExpenseFormKit";
 import { ExpenseAmountField, ExpenseQuantityBlock } from "./ExpenseQuantityBlock";
 
@@ -47,6 +47,7 @@ export type QuickExpenseFormValues = {
   quantity: string;
   unit: string;
   unitPrice: string;
+  supplierInvoiceNumber: string;
 };
 
 const EMPTY_FORM: QuickExpenseFormValues = {
@@ -59,6 +60,7 @@ const EMPTY_FORM: QuickExpenseFormValues = {
   quantity: "",
   unit: "",
   unitPrice: "",
+  supplierInvoiceNumber: "",
 };
 
 export type QuickExpenseSheetProps = {
@@ -70,6 +72,8 @@ export type QuickExpenseSheetProps = {
   editExpense?: {
     id: string;
     clientId: string;
+    expenseNumber?: string;
+    supplierInvoiceNumber?: string;
     description: string;
     amount: number;
     category: string;
@@ -91,8 +95,7 @@ export const QuickExpenseSheet = ({
 }: QuickExpenseSheetProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const { clients, addExpense, updateExpense } = useDataStore();
-  const { user } = useAuthStore();
+  const { clients, expenses, addExpense, updateExpense } = useDataStore();
   const [loading, setLoading] = useState(false);
   const isEdit = Boolean(editExpense?.id);
 
@@ -133,6 +136,7 @@ export const QuickExpenseSheet = ({
         quantity: editExpense.quantity != null ? String(editExpense.quantity) : "",
         unit: editExpense.unit ?? "",
         unitPrice: editExpense.unitPrice != null ? String(editExpense.unitPrice) : "",
+        supplierInvoiceNumber: editExpense.supplierInvoiceNumber ?? "",
       });
       return;
     }
@@ -172,8 +176,13 @@ export const QuickExpenseSheet = ({
 
       setLoading(true);
       try {
+        const expenseId = isEdit && editExpense ? editExpense.id : crypto.randomUUID();
+
         const payload = {
           clientId: data.clientId,
+          expenseNumber:
+            editExpense?.expenseNumber?.trim() || getNextExpenseNumber(expenses),
+          supplierInvoiceNumber: data.supplierInvoiceNumber?.trim() || undefined,
           description: data.description.trim(),
           amount,
           category: data.category,
@@ -191,7 +200,7 @@ export const QuickExpenseSheet = ({
           toast.success("تم تحديث المصروف");
         } else {
           await addExpense({
-            id: crypto.randomUUID(),
+            id: expenseId,
             ...payload,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -207,7 +216,7 @@ export const QuickExpenseSheet = ({
         setLoading(false);
       }
     },
-    [addExpense, updateExpense, editExpense, isEdit, onClose, onSaved, user]
+    [addExpense, updateExpense, editExpense, expenses, isEdit, onClose, onSaved]
   );
 
   const lockedClient = Boolean(defaultClientId && !isEdit);
@@ -218,6 +227,7 @@ export const QuickExpenseSheet = ({
       onClose={() => !loading && onClose()}
       maxWidth="xs"
       fullWidth
+      className="dialog-premium"
       transitionDuration={{ enter: 220, exit: 160 }}
       PaperProps={{
         sx: {
@@ -227,7 +237,10 @@ export const QuickExpenseSheet = ({
           m: { xs: 0, sm: 2 },
           width: { xs: "100%", sm: undefined },
           maxWidth: { xs: "100%", sm: 460 },
-          maxHeight: { xs: "92dvh", sm: "calc(100dvh - 64px)" },
+          maxHeight: {
+            xs: "calc(92dvh - env(safe-area-inset-bottom, 0px))",
+            sm: "calc(100dvh - 64px)",
+          },
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -463,20 +476,43 @@ export const QuickExpenseSheet = ({
               )}
             />
 
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="ملاحظات (اختياري)"
-                  multiline
-                  rows={2}
-                  fullWidth
-                  sx={sheetFieldSx}
-                />
-              )}
-            />
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+              <Controller
+                name="supplierInvoiceNumber"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="رقم الفاتورة"
+                    placeholder="اختياري"
+                    fullWidth
+                    sx={sheetFieldSx}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start" sx={{ ml: 1 }}>
+                          <FileText size={17} color={theme.palette.text.secondary} strokeWidth={2} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+
+              <Controller
+                name="notes"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="ملاحظات (اختياري)"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    sx={sheetFieldSx}
+                  />
+                )}
+              />
+            </Stack>
           </Stack>
         </LocalizationProvider>
 

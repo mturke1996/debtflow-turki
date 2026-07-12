@@ -41,3 +41,11 @@ export function formatExpensePreview(amount: number): string {
   const rounded = Math.round(amount || 0);
   return `${rounded.toLocaleString("ar-LY")} د.ل`;
 }
+
+export function formatQuantityDisplay(quantity: number, unit?: string): string {
+  const q = Number.isInteger(quantity)
+    ? quantity.toLocaleString("ar-LY")
+    : quantity.toLocaleString("ar-LY", { maximumFractionDigits: 3 });
+  const u = unit?.trim();
+  return u ? `${q}\u00A0${u}` : q;
+}

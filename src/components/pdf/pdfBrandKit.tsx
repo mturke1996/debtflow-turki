@@ -4,23 +4,41 @@ import { PDF_COMPANY_INFO } from "@/constants/pdfCompanyInfo";
 import { COMPANY_INFO } from "@/constants/companyInfo";
 import { PDF_FONT_FAMILY } from "./pdfFonts";
 
+/** Ledger Stone print system — matches app brand (teal + warm stone) */
 export const PDFPalette = {
-  primary: "#4a5d4a",
-  accent: "#8b7e6a",
-  accentLight: "#c8c0b0",
-  text: "#1a1f1a",
-  muted: "#6b7f6b",
+  primary: "#0f766e",
+  primaryDark: "#0d5c56",
+  accent: "#78716c",
+  accentLight: "#a8a29e",
+  text: "#1c1917",
+  muted: "#57534e",
   white: "#ffffff",
-  border: "#e8e5de",
-  rowAlt: "#fafaf8",
-  success: "#0d9668",
-  warning: "#c9a54e",
-  danger: "#d64545",
-  headerBg: "#4a5d4a",
-  paleGold: "#fffcf5",
+  canvas: "#f7f6f3",
+  border: "#e7e5e4",
+  rowAlt: "#fafaf9",
+  success: "#15803d",
+  warning: "#b45309",
+  danger: "#b91c1c",
+  headerBg: "#0f766e",
+  paleGold: "#faf8f5",
+  softTeal: "#edf3f2",
 };
 
 export const LIBYAN_CURRENCY_LABEL = "د.ل";
+
+export const PDF_PAGINATION = {
+  tableHead: 32,
+  minRowHeight: 28,
+  totalBar: 36,
+} as const;
+
+export type PdfSummaryCell = {
+  label: string;
+  value: number | string;
+  color?: string;
+  accent?: boolean;
+  money?: boolean;
+};
 
 export const pdfBrandStyles = StyleSheet.create({
   page: {
@@ -29,7 +47,7 @@ export const pdfBrandStyles = StyleSheet.create({
     color: PDFPalette.text,
     backgroundColor: PDFPalette.white,
     paddingTop: 30,
-    paddingBottom: 56,
+    paddingBottom: 70,
     paddingHorizontal: 36,
   },
 
@@ -46,13 +64,13 @@ export const pdfBrandStyles = StyleSheet.create({
     paddingTop: 8,
   },
   titleEn: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#cfd5cf",
-    letterSpacing: 1.2,
+    color: "#d6d3d1",
+    letterSpacing: 1.4,
     marginBottom: 4,
   },
-  titleAr: { fontSize: 11, fontWeight: "bold", color: PDFPalette.primary },
+  titleAr: { fontSize: 12, fontWeight: "bold", color: PDFPalette.primaryDark },
 
   identityRow: {
     flexDirection: "row",
@@ -172,50 +190,60 @@ export const pdfBrandStyles = StyleSheet.create({
 
   footer: {
     position: "absolute",
-    bottom: 14,
+    bottom: 12,
     left: 36,
     right: 36,
-    textAlign: "center",
     borderTopWidth: 1,
-    borderTopColor: "#eee",
-    paddingTop: 8,
+    borderTopColor: PDFPalette.border,
+    paddingTop: 7,
   },
   footerBrand: {
-    fontSize: 9.5,
+    fontSize: 9,
     fontWeight: "bold",
-    color: PDFPalette.primary,
+    color: PDFPalette.primaryDark,
     marginBottom: 2,
+    textAlign: "center",
   },
   footerEng: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontWeight: "bold",
     color: PDFPalette.accent,
-    marginBottom: 3,
+    marginBottom: 2,
+    textAlign: "center",
   },
   footerMuted: {
-    fontSize: 7.8,
-    color: "#778877",
+    fontSize: 7.4,
+    color: PDFPalette.muted,
     lineHeight: 1.4,
-    marginBottom: 2,
+    marginBottom: 1,
+    textAlign: "center",
   },
-  footerNote: { fontSize: 6.8, color: "#888" },
+  footerNote: { fontSize: 6.6, color: PDFPalette.accentLight, textAlign: "center" },
+  footerPage: {
+    position: "absolute",
+    bottom: 12,
+    left: 36,
+    fontSize: 7.5,
+    fontWeight: "bold",
+    color: PDFPalette.muted,
+  },
 
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   datesCol: { width: "38%" },
-  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  dateLabel: { fontSize: 8.8, color: "#999", textAlign: "right" },
-  dateVal: { fontSize: 8.8, fontWeight: "bold", color: PDFPalette.text, textAlign: "left" },
+  dateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 7 },
+  dateLabel: { fontSize: 8.5, color: PDFPalette.accentLight, textAlign: "right" },
+  dateVal: { fontSize: 8.5, fontWeight: "bold", color: PDFPalette.text, textAlign: "left" },
 
   clientBox: {
     width: "55%",
     paddingVertical: 4,
     paddingRight: 12,
-    borderRightWidth: 2,
+    borderRightWidth: 2.5,
     borderRightColor: PDFPalette.primary,
     alignItems: "flex-end",
   },
@@ -227,18 +255,18 @@ export const pdfBrandStyles = StyleSheet.create({
     textAlign: "right",
   },
   clientName: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: "bold",
-    color: "#2d3a2d",
+    color: PDFPalette.text,
     textAlign: "right",
     marginBottom: 2,
   },
-  clientSub: { fontSize: 8.8, color: "#888", marginTop: 2, textAlign: "right" },
+  clientSub: { fontSize: 8.8, color: PDFPalette.muted, marginTop: 2, textAlign: "right" },
 
   sectionTitle: {
     fontSize: 10.5,
     fontWeight: "bold",
-    color: PDFPalette.primary,
+    color: PDFPalette.primaryDark,
     marginBottom: 6,
     marginTop: 12,
     paddingBottom: 4,
@@ -247,28 +275,28 @@ export const pdfBrandStyles = StyleSheet.create({
     textAlign: "right",
   },
 
-  summaryRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  summaryRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
   summaryCard: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 7,
     backgroundColor: PDFPalette.rowAlt,
-    borderRadius: 5,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: PDFPalette.border,
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 8.2,
+    fontSize: 7.8,
     color: PDFPalette.muted,
     marginBottom: 5,
     fontWeight: "bold",
     textAlign: "center",
   },
   summaryValue: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "bold",
-    color: PDFPalette.primary,
+    color: PDFPalette.primaryDark,
     textAlign: "center",
   },
   summaryCurr: {
@@ -282,35 +310,35 @@ export const pdfBrandStyles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: PDFPalette.headerBg,
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 3,
     marginBottom: 2,
   },
   th: {
     color: PDFPalette.white,
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: "bold",
     textAlign: "right",
   },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0efeb",
+    borderBottomColor: PDFPalette.border,
   },
   rowEven: { backgroundColor: PDFPalette.rowAlt },
 
-  td: { fontSize: 9, color: PDFPalette.text, textAlign: "right" },
-  tdBold: { fontSize: 9, fontWeight: "bold", color: PDFPalette.text, textAlign: "right" },
-  tdPos: { fontSize: 9, fontWeight: "bold", color: PDFPalette.success, textAlign: "right" },
-  tdNeg: { fontSize: 9, fontWeight: "bold", color: PDFPalette.danger, textAlign: "right" },
+  td: { fontSize: 8.5, color: PDFPalette.text, textAlign: "right" },
+  tdBold: { fontSize: 8.5, fontWeight: "bold", color: PDFPalette.text, textAlign: "right" },
+  tdPos: { fontSize: 8.5, fontWeight: "bold", color: PDFPalette.success, textAlign: "right" },
+  tdNeg: { fontSize: 8.5, fontWeight: "bold", color: PDFPalette.danger, textAlign: "right" },
 
   totalRow: {
     flexDirection: "row",
     paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "#f0ede7",
+    paddingHorizontal: 8,
+    backgroundColor: PDFPalette.softTeal,
     borderTopWidth: 1.5,
     borderTopColor: PDFPalette.primary,
     marginTop: 1,
@@ -321,20 +349,20 @@ export const pdfBrandStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 10,
-    marginTop: 10,
+    marginTop: 8,
     borderTopWidth: 1.5,
     borderTopColor: PDFPalette.primary,
   },
   grandLbl: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: "bold",
-    color: PDFPalette.primary,
+    color: PDFPalette.primaryDark,
     textAlign: "right",
   },
   grandAmt: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "bold",
-    color: PDFPalette.primary,
+    color: PDFPalette.primaryDark,
     textAlign: "left",
   },
 
@@ -360,7 +388,104 @@ export const pdfBrandStyles = StyleSheet.create({
     marginBottom: 4,
     textAlign: "right",
   },
-  notesTxt: { fontSize: 9.5, color: "#555", textAlign: "right", lineHeight: 1.65 },
+  notesTxt: { fontSize: 9.5, color: PDFPalette.muted, textAlign: "right", lineHeight: 1.65 },
+
+  settleBox: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: PDFPalette.border,
+    borderRadius: 5,
+    overflow: "hidden",
+    backgroundColor: PDFPalette.white,
+  },
+  settleHead: {
+    backgroundColor: PDFPalette.softTeal,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: PDFPalette.border,
+    alignItems: "flex-end",
+  },
+  settleHeadTxt: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: PDFPalette.primaryDark,
+    textAlign: "right",
+  },
+  settleBody: { paddingVertical: 8, paddingHorizontal: 12 },
+  settleLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+  },
+  settleLbl: {
+    fontSize: 9.5,
+    color: PDFPalette.muted,
+    fontWeight: "bold",
+    textAlign: "right",
+  },
+  settleDivider: {
+    borderTopWidth: 1,
+    borderTopColor: PDFPalette.border,
+    marginVertical: 4,
+  },
+  settleResult: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: PDFPalette.canvas,
+    borderTopWidth: 1.5,
+    borderTopColor: PDFPalette.primary,
+  },
+  settleResultLbl: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: PDFPalette.text,
+    textAlign: "right",
+  },
+  settleHint: {
+    fontSize: 7.5,
+    color: PDFPalette.muted,
+    textAlign: "right",
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    lineHeight: 1.45,
+  },
+  emptyBox: {
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    backgroundColor: PDFPalette.rowAlt,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: PDFPalette.border,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  emptyTxt: {
+    fontSize: 9,
+    color: PDFPalette.muted,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  formulaBox: {
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: PDFPalette.paleGold,
+    borderRadius: 4,
+    borderRightWidth: 3,
+    borderRightColor: PDFPalette.primary,
+    alignItems: "flex-end",
+  },
+  formulaTxt: {
+    fontSize: 8.2,
+    color: PDFPalette.muted,
+    textAlign: "right",
+    lineHeight: 1.5,
+  },
 });
 
 /**
@@ -389,15 +514,22 @@ export const PdfBrandedFooter = () => {
   ]);
   const line2 = joinNonEmpty([PDF_COMPANY_INFO.email, PDF_COMPANY_INFO.website]);
   return (
-    <View style={pdfBrandStyles.footer} fixed>
-      <Text style={pdfBrandStyles.footerBrand}>{PDF_COMPANY_INFO.fullName}</Text>
-      {PDF_COMPANY_INFO.engineerName ? (
-        <Text style={pdfBrandStyles.footerEng}>{PDF_COMPANY_INFO.engineerName}</Text>
-      ) : null}
-      {line1 ? <Text style={pdfBrandStyles.footerMuted}>{line1}</Text> : null}
-      {line2 ? <Text style={pdfBrandStyles.footerMuted}>{line2}</Text> : null}
-      <Text style={pdfBrandStyles.footerNote}>{PDF_COMPANY_INFO.footerNote}</Text>
-    </View>
+    <>
+      <View style={pdfBrandStyles.footer} fixed>
+        <Text style={pdfBrandStyles.footerBrand}>{PDF_COMPANY_INFO.fullName}</Text>
+        {PDF_COMPANY_INFO.engineerName ? (
+          <Text style={pdfBrandStyles.footerEng}>{PDF_COMPANY_INFO.engineerName}</Text>
+        ) : null}
+        {line1 ? <Text style={pdfBrandStyles.footerMuted}>{line1}</Text> : null}
+        {line2 ? <Text style={pdfBrandStyles.footerMuted}>{line2}</Text> : null}
+        <Text style={pdfBrandStyles.footerNote}>{PDF_COMPANY_INFO.footerNote}</Text>
+      </View>
+      <Text
+        style={pdfBrandStyles.footerPage}
+        render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+        fixed
+      />
+    </>
   );
 };
 
@@ -464,7 +596,14 @@ export const PdfBrandedReportHeader = ({ titleEn, subtitleAr, refLine }: HeaderP
 );
 
 export function pdfFmtNum(n: number) {
-  return new Intl.NumberFormat("en-US").format(Math.round(n || 0));
+  const value = Number(n) || 0;
+  if (Number.isInteger(value)) {
+    return new Intl.NumberFormat("en-US").format(value);
+  }
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(value);
 }
 
 export function pdfFmtDate(iso?: string) {
@@ -516,5 +655,132 @@ export const PdfMoneyText = ({
     >
       {LIBYAN_CURRENCY_LABEL}
     </Text>
+  </View>
+);
+
+export const PdfSummaryStrip = ({ cells }: { cells: PdfSummaryCell[] }) => (
+  <View style={[pdfBrandStyles.summaryRow, { marginBottom: 18 }]} wrap={false}>
+    {cells.map((cell) => (
+      <View
+        key={cell.label}
+        style={[
+          pdfBrandStyles.summaryCard,
+          cell.accent
+            ? {
+                borderTopWidth: 3,
+                borderTopColor: cell.color ?? PDFPalette.primary,
+                backgroundColor: "#fffcfc",
+              }
+            : {},
+        ]}
+      >
+        <Text style={pdfBrandStyles.summaryLabel}>{cell.label}</Text>
+        {cell.money && typeof cell.value === "number" ? (
+          <PdfMoneyText
+            amount={cell.value}
+            style={[pdfBrandStyles.summaryValue, cell.color ? { color: cell.color } : null]}
+            containerStyle={{ justifyContent: "center" }}
+          />
+        ) : (
+          <Text
+            style={[
+              pdfBrandStyles.summaryValue,
+              cell.color ? { color: cell.color } : null,
+            ]}
+          >
+            {String(cell.value)}
+          </Text>
+        )}
+      </View>
+    ))}
+  </View>
+);
+
+export const PdfSectionTitle = ({
+  children,
+  compact,
+}: {
+  children: React.ReactNode;
+  compact?: boolean;
+}) => (
+  <Text
+    style={[pdfBrandStyles.sectionTitle, compact ? { marginTop: 8 } : null]}
+    minPresenceAhead={PDF_PAGINATION.tableHead + PDF_PAGINATION.minRowHeight}
+  >
+    {children}
+  </Text>
+);
+
+export const PdfEmptyBlock = ({ message }: { message: string }) => (
+  <View style={pdfBrandStyles.emptyBox} wrap={false}>
+    <Text style={pdfBrandStyles.emptyTxt}>{message}</Text>
+  </View>
+);
+
+type SettlementLine = {
+  label: string;
+  amount: number;
+  color?: string;
+  emphasize?: boolean;
+};
+
+export const PdfSettlementCard = ({
+  title,
+  lines,
+  resultLabel,
+  resultAmount,
+  resultColor,
+  hint,
+}: {
+  title: string;
+  lines: SettlementLine[];
+  resultLabel: string;
+  resultAmount: number;
+  resultColor: string;
+  hint?: string;
+}) => (
+  <View style={pdfBrandStyles.settleBox} wrap={false}>
+    <View style={pdfBrandStyles.settleHead}>
+      <Text style={pdfBrandStyles.settleHeadTxt}>{title}</Text>
+    </View>
+    <View style={pdfBrandStyles.settleBody}>
+      {lines.map((line, index) => {
+        const prev = lines[index - 1];
+        const showDivider = Boolean(line.emphasize && prev && !prev.emphasize);
+        return (
+          <React.Fragment key={line.label}>
+            {showDivider ? <View style={pdfBrandStyles.settleDivider} /> : null}
+            <View style={pdfBrandStyles.settleLine}>
+              <PdfMoneyText
+                amount={line.amount}
+                style={[
+                  pdfBrandStyles.grandAmt,
+                  {
+                    fontSize: line.emphasize ? 12 : 10.5,
+                    color: line.color ?? PDFPalette.text,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  pdfBrandStyles.settleLbl,
+                  line.emphasize ? { color: PDFPalette.text, fontSize: 10 } : null,
+                ]}
+              >
+                {line.label}
+              </Text>
+            </View>
+          </React.Fragment>
+        );
+      })}
+    </View>
+    <View style={pdfBrandStyles.settleResult}>
+      <PdfMoneyText
+        amount={resultAmount}
+        style={[pdfBrandStyles.grandAmt, { fontSize: 14, color: resultColor }]}
+      />
+      <Text style={pdfBrandStyles.settleResultLbl}>{resultLabel}</Text>
+    </View>
+    {hint ? <Text style={pdfBrandStyles.settleHint}>{hint}</Text> : null}
   </View>
 );
