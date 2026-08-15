@@ -510,6 +510,41 @@ export const PdfLogoMark = ({ size = 64 }: { size?: number }) => (
   </View>
 );
 
+/**
+ * علامة مائية لشعار الشركة في خلفية كل صفحة PDF بجودة عالية وتنسيق غير مشوه
+ */
+export const PdfWatermark = ({
+  size = 320,
+  opacity = 0.048,
+}: {
+  size?: number;
+  opacity?: number;
+}) => (
+  <View
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: -1,
+    }}
+    fixed
+  >
+    <Image
+      src={pdfLogoSrc}
+      style={{
+        width: size,
+        height: size,
+        opacity,
+        objectFit: "contain",
+      }}
+    />
+  </View>
+);
+
 const servicesBulleted = `${PDF_COMPANY_INFO.services.join("   •   ")}`;
 
 const joinNonEmpty = (arr: string[], sep = " • ") =>

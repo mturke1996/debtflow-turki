@@ -79,10 +79,12 @@ type KpiCardProps = {
   icon: SvgIconComponent;
   label: string;
   value: string | number;
+  subtitle?: string;
   tone?: KpiTone;
+  onClick?: () => void;
 };
 
-export const KpiCard = ({ icon: IconCmp, label, value, tone = "primary" }: KpiCardProps) => {
+export const KpiCard = ({ icon: IconCmp, label, value, subtitle, tone = "primary", onClick }: KpiCardProps) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const t = resolveTone(theme, tone);
@@ -90,11 +92,13 @@ export const KpiCard = ({ icon: IconCmp, label, value, tone = "primary" }: KpiCa
   return (
     <Card
       elevation={0}
-      className="pressable"
+      className={onClick ? "pressable" : undefined}
+      onClick={onClick}
       sx={{
         height: "100%",
         borderRadius: "20px",
         overflow: "hidden",
+        cursor: onClick ? "pointer" : "default",
         bgcolor: isDark ? alpha("#fff", 0.03) : "#fff",
         border: `1px solid ${t.border}`,
         boxShadow: isDark
@@ -103,7 +107,7 @@ export const KpiCard = ({ icon: IconCmp, label, value, tone = "primary" }: KpiCa
         transition: "transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease",
         "@media (hover: hover) and (pointer: fine)": {
           "&:hover": {
-            transform: "translateY(-2px)",
+            transform: onClick ? "translateY(-2px)" : "none",
             boxShadow: isDark
               ? "0 1px 0 rgba(255,255,255, 0.07) inset, 0 18px 36px -10px rgba(0,0,0,0.5)"
               : "0 1px 0 rgba(255,255,255,1) inset, 0 18px 36px -10px rgba(25,34,29,0.12)",
@@ -152,6 +156,21 @@ export const KpiCard = ({ icon: IconCmp, label, value, tone = "primary" }: KpiCa
         >
           {value}
         </Typography>
+        {subtitle && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: "block",
+              mt: 0.5,
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              opacity: 0.85,
+            }}
+          >
+            {subtitle}
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );

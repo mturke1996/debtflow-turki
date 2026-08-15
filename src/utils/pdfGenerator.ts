@@ -2092,13 +2092,12 @@ export const generateExpenseInvoicesSummaryPDF = (
     0
   );
 
-  // Calculate total profit from payments
-  const totalProfit = clients.reduce((sum, client) => {
-    const percentage = client.profitPercentage || 0;
+  // Calculate total profit from invoice expenses
+  const totalProfit = expenseInvoices.reduce((sum, inv) => {
+    const client = clients.find((c) => c.id === inv.clientId);
+    const percentage = client?.profitPercentage || 0;
     if (percentage <= 0) return sum;
-    const clientPayments = payments.filter((p) => p.clientId === client.id);
-    const clientTotalPayments = clientPayments.reduce((s, p) => s + p.amount, 0);
-    return sum + (clientTotalPayments * percentage) / 100;
+    return sum + (inv.totalAmount * percentage) / 100;
   }, 0);
 
   // Generate HTML for the expense invoices summary
@@ -2786,10 +2785,13 @@ export const generateFinalReportPDF = (
   const totalPayments = payments.reduce((sum, pay) => sum + pay.amount, 0);
   const profitPercentage = client.profitPercentage || 0;
   const profit =
-    totalPayments > 0 && profitPercentage > 0
-      ? (totalPayments * profitPercentage) / 100
+    totalExpenses > 0 && profitPercentage > 0
+      ? (totalExpenses * profitPercentage) / 100
       : 0;
-  const remaining = totalPayments - profit;
+  const totalRequired = totalExpenses + profit;
+  const netBalance = totalPayments - totalRequired;
+  const remaining = Math.max(0, totalRequired - totalPayments);
+  const surplus = Math.max(0, totalPayments - totalRequired);
 
   // Group expenses by date
   const expensesByDate = expenses.reduce((acc, exp) => {
@@ -3594,20 +3596,20 @@ export const generateFinalReportPDF = (
           
           <div class="summary-card profit">
             <div class="summary-card-icon">📈</div>
-            <div class="summary-card-label">نسبة الربح (${profitPercentage}%)</div>
+            <div class="summary-card-label">نسبة الشركة (${profitPercentage}%)</div>
             <div class="summary-card-value profit">${formatCurrency(
               profit
             )}</div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">من المدفوعات</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">من المصروفات</div>
           </div>
           
           <div class="summary-card remaining">
             <div class="summary-card-icon">💼</div>
-            <div class="summary-card-label">الباقي</div>
-            <div class="summary-card-value remaining">${formatCurrency(
-              remaining
+            <div class="summary-card-label">${surplus > 0 ? "فائض للعميل" : remaining > 0 ? "المتبقي للسداد" : "الرصيد"}</div>
+            <div class="summary-card-value remaining" style="color: ${surplus > 0 ? "#10b981" : remaining > 0 ? "#ef4444" : "#0f766e"};">${formatCurrency(
+              surplus > 0 ? surplus : remaining
             )}</div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">المدفوعات - الربح</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">${surplus > 0 ? "مدفوع بالزيادة" : remaining > 0 ? "مطلوب سداده" : "مسدد بالكامل"}</div>
           </div>
         </div>
         
@@ -3751,22 +3753,28 @@ export const generateFinalReportPDF = (
               )}</div>
             </div>
             <div class="calculation-item">
-              <div class="calculation-label">إجمالي المدفوعات</div>
-              <div class="calculation-value" style="color: #10b981;">${formatCurrency(
-                totalPayments
-              )}</div>
-            </div>
-            <div class="calculation-item">
-              <div class="calculation-label">نسبة الربح (${profitPercentage}%)</div>
+              <div class="calculation-label">نسبة الشركة (${profitPercentage}%)</div>
               <div class="calculation-value" style="color: #f59e0b;">${formatCurrency(
                 profit
               )}</div>
             </div>
             <div class="calculation-item">
-              <div class="calculation-label">الباقي (المدفوعات - الربح)</div>
-              <div class="calculation-value" style="color: #3b82f6;">${formatCurrency(
-                remaining
+              <div class="calculation-label">إجمالي المستحق (المصروفات + النسبة)</div>
+              <div class="calculation-value" style="color: #6366f1;">${formatCurrency(
+                totalRequired
               )}</div>
+            </div>
+            <div class="calculation-item">
+              <div class="calculation-label">إجمالي المدفوعات</div>
+              <div class="calculation-value" style="color: #10b981;">${formatCurrency(
+                totalPayments
+              )}</div>
+            </div>
+            <div class="calculation-item" style="grid-column: 1 / -1;">
+              <div class="calculation-label">${surplus > 0 ? "الرصيد المتبقي (فائض لصالح العميل)" : remaining > 0 ? "المبلغ المتبقي للسداد على العميل" : "حالة الحساب"}</div>
+              <div class="calculation-value" style="color: ${surplus > 0 ? "#10b981" : remaining > 0 ? "#ef4444" : "#0f766e"}; font-size: 18px;">${
+                netBalance === 0 ? "مسدد بالكامل" : formatCurrency(surplus > 0 ? surplus : remaining)
+              }</div>
             </div>
           </div>
         </div>

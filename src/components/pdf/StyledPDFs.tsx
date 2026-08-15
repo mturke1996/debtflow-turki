@@ -16,6 +16,7 @@ import {
   PdfEmptyBlock,
   PdfSettlementCard,
   PDF_PAGINATION,
+  PdfWatermark,
 } from "./pdfBrandKit";
 import { expenseHasQuantityLine, formatQuantityDisplay } from "@/utils/expenseFormUtils";
 
@@ -53,6 +54,7 @@ const ci = {
 export const InvoiceStyledPDF = ({ invoice, client }: { invoice: Invoice; client: Client }) => (
   <Document title={`فاتورة-${invoice.invoiceNumber}`} language="ar">
     <Page size="A4" style={s.page}>
+      <PdfWatermark />
       <PdfBrandedReportHeader
         titleEn="INVOICE"
         subtitleAr="فاتورة رسمية"
@@ -139,6 +141,7 @@ export const ExpensesStyledPDF = ({ client, expenses }: { client: Client; expens
   return (
     <Document title={`مصروفات-${client.name}`} language="ar">
       <Page size="A4" style={s.page}>
+        <PdfWatermark />
         <PdfBrandedReportHeader titleEn="EXPENSES" subtitleAr="كشف المصروفات المعتمدة" />
 
         <View style={s.infoRow}>
@@ -204,6 +207,7 @@ export const PaymentsStyledPDF = ({ client, payments }: { client: Client; paymen
   return (
     <Document title={`مدفوعات-${client.name}`} language="ar">
       <Page size="A4" style={s.page}>
+        <PdfWatermark />
         <PdfBrandedReportHeader titleEn="PAYMENTS" subtitleAr="كشف المبالغ الواردة" />
 
         <View style={s.infoRow}>
@@ -346,6 +350,7 @@ export const ClientFinalStyledPDF = ({
       language="ar"
     >
       <Page size="A4" style={s.page} wrap>
+        <PdfWatermark />
         <PdfBrandedFooter />
 
         <View wrap={false} style={{ marginBottom: 10 }}>
@@ -400,7 +405,7 @@ export const ClientFinalStyledPDF = ({
                 money: true,
               },
               {
-                label: `صافي النسبة (${profitPercentage}%)`,
+                label: `نسبة الشركة (${profitPercentage}%)`,
                 value: profit,
                 color: accentColor,
                 money: true,
@@ -413,7 +418,7 @@ export const ClientFinalStyledPDF = ({
                 money: true,
               },
               {
-                label: surplus > 0 ? "فائض دفع" : remaining > 0 ? "المتبقي" : "الرصيد",
+                label: surplus > 0 ? "فائض دفع" : remaining > 0 ? "المتبقي للسداد" : "الرصيد",
                 value: surplus > 0 ? surplus : remaining,
                 color: resultColor,
                 accent: true,
@@ -424,7 +429,7 @@ export const ClientFinalStyledPDF = ({
 
           <View style={s.formulaBox}>
             <Text style={s.formulaTxt}>
-              طريقة الحساب: المستحق = المصروفات + صافي النسبة + الديون غير المسددة · المتبقي = المستحق − المقبوض
+              طريقة الحساب: المستحق = المصروفات + نسبة الشركة + الديون غير المسددة · المتبقي = المستحق − المقبوض
             </Text>
           </View>
         </View>
@@ -569,7 +574,7 @@ export const ClientFinalStyledPDF = ({
           title="خلاصة التسوية النهائية"
           lines={[
             { label: "إجمالي المصروفات", amount: totalExpenses },
-            { label: `صافي النسبة (${profitPercentage}%)`, amount: profit },
+            { label: `نسبة الشركة (${profitPercentage}%)`, amount: profit },
             { label: "ديون غير مسددة", amount: remainingDebts },
             {
               label: "إجمالي المستحق",
@@ -603,6 +608,7 @@ export const ClientFinalStyledPDF = ({
 export const ExpenseInvoiceStyledPDF = ({ invoice, client }: { invoice: ExpenseInvoice; client: Client }) => (
   <Document title={`فاتورة-مصاريف-${invoice.invoiceNumber}`} language="ar">
     <Page size="A4" style={s.page}>
+      <PdfWatermark />
       <PdfBrandedReportHeader titleEn="EXP. INVOICE" subtitleAr="فاتورة تجميع مصروفات" refLine={`#${invoice.invoiceNumber}`} />
 
       <View style={s.infoRow}>
@@ -667,6 +673,7 @@ export const PaymentsSummaryStyledPDF = ({ payments, clients }: { payments: Paym
   return (
     <Document title="مدفوعات-شامل" language="ar">
       <Page size="A4" style={s.page}>
+        <PdfWatermark />
         <PdfBrandedReportHeader titleEn="COLLECTIONS" subtitleAr="تقرير المدفوعات لجميع العملاء" />
 
         <View style={s.summaryRow}>
@@ -720,6 +727,7 @@ export const ExpenseInvoicesSummaryStyledPDF = ({
   return (
     <Document title="فواتير-مصاريف-شامل" language="ar">
       <Page size="A4" style={s.page}>
+        <PdfWatermark />
         <PdfBrandedReportHeader titleEn="INVOICES" subtitleAr="قائمة فواتير المصروفات الصادرة" />
 
         <View style={s.summaryRow}>

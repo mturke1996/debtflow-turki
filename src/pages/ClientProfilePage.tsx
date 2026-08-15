@@ -40,11 +40,14 @@ import {
   Delete,
   CreditCard,
   PictureAsPdf,
+  WhatsApp,
+  Share,
 } from "@mui/icons-material";
 import { useDataStore } from "@/store/useDataStore";
 import { useForm, Controller } from "react-hook-form";
 import { formatCurrency } from "@/utils/calculations";
 import { downloadPdf } from "@/utils/pdfService";
+import { shareClientFinancialSummaryWhatsApp } from "@/utils/whatsappExport";
 import {
   ClientFinalStyledPDF,
   ExpensesStyledPDF,
@@ -53,7 +56,7 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { KpiCard } from "@/components/ui/KpiCard";
-import { ShortcutTile } from "@/components/ui/ShortcutTile";
+import { ShortcutTile, type ShortcutTileTone } from "@/components/ui/ShortcutTile";
 import { QuickExpenseSheet } from "@/components/expense/QuickExpenseSheet";
 import { DialogScreenHeader } from "@/components/ui/DialogScreenHeader";
 import { ClientLedgerScreen } from "@/components/client/ClientLedgerScreen";
@@ -101,49 +104,6 @@ export const ClientProfilePage = () => {
   } = useDataStore();
   const confirm = useConfirm();
 
-  // Menu items for quick navigation
-  const menuItems = [
-    {
-      title: "المصروفات",
-      icon: TrendingDown,
-      color: "#d64545",
-      bgColor:
-        theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.12)" : "rgba(214, 69, 69, 0.08)",
-      borderColor:
-        theme.palette.mode === "dark" ? "rgba(214, 69, 69, 0.2)" : "rgba(214, 69, 69, 0.12)",
-      onClick: () => setActiveSection("expenses"),
-    },
-    {
-      title: "المدفوعات",
-      icon: Payment,
-      color: "#0d9668",
-      bgColor:
-        theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.12)" : "rgba(13, 150, 104, 0.08)",
-      borderColor:
-        theme.palette.mode === "dark" ? "rgba(13, 150, 104, 0.2)" : "rgba(13, 150, 104, 0.12)",
-      onClick: () => setActiveSection("payments"),
-    },
-    {
-      title: "الديون",
-      icon: CreditCard,
-      color: "#c9a54e",
-      bgColor:
-        theme.palette.mode === "dark" ? "rgba(201, 165, 78, 0.12)" : "rgba(201, 165, 78, 0.08)",
-      borderColor:
-        theme.palette.mode === "dark" ? "rgba(201, 165, 78, 0.2)" : "rgba(201, 165, 78, 0.12)",
-      onClick: () => setDebtsListDialogOpen(true),
-    },
-    {
-      title: "حساب الأرباح",
-      icon: TrendingUp,
-      color: "#5a8fc4",
-      bgColor:
-        theme.palette.mode === "dark" ? "rgba(90, 143, 196, 0.12)" : "rgba(90, 143, 196, 0.08)",
-      borderColor:
-        theme.palette.mode === "dark" ? "rgba(90, 143, 196, 0.2)" : "rgba(90, 143, 196, 0.12)",
-      onClick: () => setProfitDialogOpen(true),
-    },
-  ];
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [debtDialogOpen, setDebtDialogOpen] = useState(false);
@@ -504,21 +464,29 @@ export const ClientProfilePage = () => {
     );
     const totalPaid = clientPayments.reduce((sum, pay) => sum + pay.amount, 0);
 
-    // نسبة الربح - تؤخذ من إجمالي المدفوعات
+    // نسبة الربح / الشركة - تحتسب دائماً من إجمالي المصروفات
     const profitPercentage = client?.profitPercentage || 0;
     const profit =
-      totalPaid > 0 && profitPercentage > 0
-        ? (totalPaid * profitPercentage) / 100
+      totalExpenses > 0 && profitPercentage > 0
+        ? (totalExpenses * profitPercentage) / 100
         : 0;
 
-    // المتبقي = المدفوع - المصروفات - الربح
-    const remaining = totalPaid - totalExpenses - profit;
+    // إجمالي المستحق = المصروفات + نسبة الشركة + الديون غير المسددة
+    const totalObligations = totalExpenses + profit + totalDebts;
+
+    // صافي الرصيد = المدفوع - إجمالي المستحق
+    const netBalance = totalPaid - totalObligations;
+    const remaining = Math.max(0, totalObligations - totalPaid);
+    const surplus = Math.max(0, totalPaid - totalObligations);
 
     return {
       totalExpenses,
       totalDebts,
       totalPaid,
+      totalObligations,
+      netBalance,
       remaining,
+      surplus,
       profit,
       profitPercentage,
       expenseCount: clientExpenses.length,
@@ -561,6 +529,79 @@ export const ClientProfilePage = () => {
       `تقرير-المدفوعات-${client.name}.pdf`
     );
   };
+
+  const menuItems: Array<{
+    title: string;
+    subtitle: string;
+    icon: any;
+    tone: ShortcutTileTone;
+    badge?: string;
+    highlight?: boolean;
+    onClick: () => void;
+  }> = useMemo(
+    () => [
+      {
+        title: "المصروفات",
+        subtitle: `${summary.expenseCount} مصروف (${formatCurrency(summary.totalExpenses)})`,
+        icon: TrendingDown,
+        tone: "error",
+        badge: summary.expenseCount > 0 ? `${summary.expenseCount}` : undefined,
+        onClick: () => setActiveSection("expenses"),
+      },
+      {
+        title: "المدفوعات",
+        subtitle: `${summary.paymentCount} دفعة (${formatCurrency(summary.totalPaid)})`,
+        icon: Payment,
+        tone: "success",
+        badge: summary.paymentCount > 0 ? `${summary.paymentCount}` : undefined,
+        onClick: () => setActiveSection("payments"),
+      },
+      {
+        title: "الديون",
+        subtitle: `${summary.debtCount} دين (${formatCurrency(summary.totalDebts)})`,
+        icon: CreditCard,
+        tone: summary.totalDebts > 0 ? "warning" : "neutral",
+        badge: summary.totalDebts > 0 ? "معلق" : undefined,
+        onClick: () => setDebtsListDialogOpen(true),
+      },
+      {
+        title: "نسبة الشركة",
+        subtitle:
+          summary.profitPercentage > 0
+            ? `${summary.profitPercentage}% (${formatCurrency(summary.profit)})`
+            : "تحديد نسبة الأرباح",
+        icon: TrendingUp,
+        tone: "info",
+        badge:
+          summary.profitPercentage > 0
+            ? `${summary.profitPercentage}%`
+            : undefined,
+        onClick: () => setProfitDialogOpen(true),
+      },
+      {
+        title: "التقرير المالي الشامل",
+        subtitle: "عرض وتصدير تقرير PDF عالي الوضوح",
+        icon: PictureAsPdf,
+        tone: "purple",
+        badge: "PDF عالي الدقة",
+        highlight: true,
+        onClick: handleDownloadFinalReport,
+      },
+      {
+        title: "مشاركة كشف الحساب",
+        subtitle: "إرسال ملخص الحساب عبر واتساب بدون روابط",
+        icon: WhatsApp,
+        tone: "success",
+        badge: "واتساب",
+        onClick: () => {
+          if (!client) return;
+          shareClientFinancialSummaryWhatsApp(client, summary);
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [summary, client]
+  );
 
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
@@ -894,11 +935,8 @@ export const ClientProfilePage = () => {
       }
 
       if (editingDebt) {
-        // عند التعديل، نحافظ على المبلغ المدفوع الحالي إذا كان المبلغ الجديد أكبر منه
-        // وإلا نعدل المبلغ المدفوع ليكون مساوياً للمبلغ الجديد
         const newPaidAmount = Math.min(editingDebt.paidAmount, amount);
         const newRemaining = Math.max(0, amount - newPaidAmount);
-        // Find party if exists
         const existingParty = clientDebtParties.find(
           (p) => p.name === data.partyName && p.type === data.partyType
         );
@@ -917,7 +955,6 @@ export const ClientProfilePage = () => {
         setEditingDebt(null);
         setSnackbarMessage("تم التعديل بنجاح");
       } else {
-        // Find party if exists
         const existingParty = clientDebtParties.find(
           (p) => p.name === data.partyName && p.type === data.partyType
         );
@@ -986,6 +1023,13 @@ export const ClientProfilePage = () => {
         action={
           <Stack direction="row" spacing={0.5}>
             <IconButton
+              onClick={() => shareClientFinancialSummaryWhatsApp(client, summary)}
+              aria-label="مشاركة عبر واتساب"
+              sx={{ border: "1px solid", borderColor: "divider", color: "success.main" }}
+            >
+              <WhatsApp />
+            </IconButton>
+            <IconButton
               onClick={(e) => setPdfMenuAnchor(e.currentTarget)}
               aria-label="تصدير PDF"
               sx={{ border: "1px solid", borderColor: "divider" }}
@@ -996,10 +1040,45 @@ export const ClientProfilePage = () => {
               anchorEl={pdfMenuAnchor}
               open={Boolean(pdfMenuAnchor)}
               onClose={() => setPdfMenuAnchor(null)}
+              PaperProps={{
+                sx: { borderRadius: 2, minWidth: 200, p: 0.5 },
+              }}
             >
-              <MenuItem onClick={handleDownloadFinalReport}>التقرير المالي الشامل</MenuItem>
-              <MenuItem onClick={handleDownloadExpensesPdf}>كشف المصروفات</MenuItem>
-              <MenuItem onClick={handleDownloadPaymentsPdf}>كشف المدفوعات</MenuItem>
+              <MenuItem onClick={handleDownloadFinalReport} sx={{ py: 1, borderRadius: 1 }}>
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <PictureAsPdf sx={{ fontSize: 18, color: "error.main" }} />
+                  <Typography variant="body2" fontWeight={700}>
+                    التقرير المالي الشامل
+                  </Typography>
+                </Stack>
+              </MenuItem>
+              <MenuItem onClick={handleDownloadExpensesPdf} sx={{ py: 1, borderRadius: 1 }}>
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <TrendingDown sx={{ fontSize: 18, color: "warning.main" }} />
+                  <Typography variant="body2">كشف المصروفات</Typography>
+                </Stack>
+              </MenuItem>
+              <MenuItem onClick={handleDownloadPaymentsPdf} sx={{ py: 1, borderRadius: 1 }}>
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <Payment sx={{ fontSize: 18, color: "success.main" }} />
+                  <Typography variant="body2">كشف المدفوعات</Typography>
+                </Stack>
+              </MenuItem>
+              <Divider sx={{ my: 0.5 }} />
+              <MenuItem
+                onClick={() => {
+                  setPdfMenuAnchor(null);
+                  shareClientFinancialSummaryWhatsApp(client, summary);
+                }}
+                sx={{ py: 1, borderRadius: 1 }}
+              >
+                <Stack direction="row" spacing={1.25} alignItems="center">
+                  <WhatsApp sx={{ fontSize: 18, color: "success.main" }} />
+                  <Typography variant="body2" fontWeight={700} color="success.main">
+                    مشاركة الملخص عبر واتساب
+                  </Typography>
+                </Stack>
+              </MenuItem>
             </Menu>
             <IconButton
               onClick={() => setEditClientDialogOpen(true)}
@@ -1015,57 +1094,115 @@ export const ClientProfilePage = () => {
       <Stack spacing={3}>
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 6, sm: 3 }}>
-            <KpiCard icon={TrendingDown} label="المصروفات" value={formatCurrency(summary.totalExpenses)} tone="error" />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <KpiCard icon={Payment} label="المدفوع" value={formatCurrency(summary.totalPaid)} tone="success" />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
             <KpiCard
-              icon={summary.remaining >= 0 ? TrendingUp : TrendingDown}
-              label="المتبقي"
-              value={formatCurrency(summary.remaining)}
-              tone={summary.remaining >= 0 ? "warning" : "error"}
+              icon={TrendingDown}
+              label="المصروفات"
+              value={formatCurrency(summary.totalExpenses)}
+              subtitle={`${summary.expenseCount} مصروف مسجل`}
+              tone="error"
+              onClick={() => setActiveSection("expenses")}
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
             <KpiCard
               icon={TrendingUp}
-              label="نسبة الربح"
-              value={summary.profitPercentage > 0 ? `${summary.profitPercentage}%` : "—"}
+              label="نسبة الشركة"
+              value={summary.profit > 0 ? formatCurrency(summary.profit) : "—"}
+              subtitle={
+                summary.profitPercentage > 0
+                  ? `${summary.profitPercentage}% من المصروفات`
+                  : "اضغط لتحديد النسبة"
+              }
               tone="info"
+              onClick={() => setProfitDialogOpen(true)}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <KpiCard
+              icon={Payment}
+              label="المدفوع"
+              value={formatCurrency(summary.totalPaid)}
+              subtitle={`${summary.paymentCount} دفعة مسجلة`}
+              tone="success"
+              onClick={() => setActiveSection("payments")}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <KpiCard
+              icon={summary.netBalance >= 0 ? TrendingUp : TrendingDown}
+              label={
+                summary.netBalance > 0
+                  ? "فائض للعميل"
+                  : summary.netBalance < 0
+                    ? "المتبقي للسداد"
+                    : "الرصيد"
+              }
+              value={
+                summary.netBalance === 0
+                  ? "مسدد بالكامل"
+                  : formatCurrency(Math.abs(summary.netBalance))
+              }
+              subtitle={
+                summary.netBalance > 0
+                  ? "رصيد دائن للعميل"
+                  : summary.netBalance < 0
+                    ? "مطلوب سداده"
+                    : "الحساب متوازن"
+              }
+              tone={
+                summary.netBalance > 0
+                  ? "success"
+                  : summary.netBalance < 0
+                    ? "error"
+                    : "primary"
+              }
             />
           </Grid>
         </Grid>
 
         <Box>
-          <Typography variant="overline" color="text.secondary" fontWeight={600} display="block" sx={{ mb: 1.5 }}>
-            إدارة الحساب
-          </Typography>
-          <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 1.5,
+            }}
+          >
+            <Typography
+              variant="overline"
+              color="text.secondary"
+              fontWeight={700}
+              display="block"
+              sx={{ letterSpacing: "0.04em", fontSize: "0.78rem" }}
+            >
+              إدارة الحساب والتقارير
+            </Typography>
+            <Button
+              size="small"
+              onClick={(e) => setPdfMenuAnchor(e.currentTarget)}
+              sx={{ fontSize: "0.75rem", fontWeight: 700, py: 0.25 }}
+              startIcon={<PictureAsPdf sx={{ fontSize: 16 }} />}
+            >
+              كشوفات PDF
+            </Button>
+          </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gap: 1.25,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            }}
+          >
             {menuItems.map((item) => (
               <ShortcutTile
                 key={item.title}
                 title={item.title}
-                subtitle={
-                  item.title === "المصروفات"
-                    ? `${summary.expenseCount} مصروف`
-                    : item.title === "المدفوعات"
-                      ? `${summary.paymentCount} دفعة`
-                      : item.title === "الديون"
-                        ? `${summary.debtCount} دين`
-                        : "حساب الأرباح"
-                }
+                subtitle={item.subtitle}
                 icon={item.icon}
-                tone={
-                  item.title === "المصروفات"
-                    ? "warning"
-                    : item.title === "المدفوعات"
-                      ? "success"
-                      : item.title === "الديون"
-                        ? "primary"
-                        : "neutral"
-                }
+                tone={item.tone}
+                badge={item.badge}
+                highlight={item.highlight}
                 onClick={item.onClick}
               />
             ))}
@@ -1074,12 +1211,37 @@ export const ClientProfilePage = () => {
 
         {clientExpenses.length > 0 && (
           <Box>
-            <Typography variant="overline" color="text.secondary" fontWeight={600} display="block" sx={{ mb: 1 }}>
-              آخر المصروفات
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Typography variant="overline" color="text.secondary" fontWeight={600} display="block">
+                آخر المصروفات
+              </Typography>
+              <Button
+                size="small"
+                startIcon={<Add sx={{ fontSize: 16 }} />}
+                onClick={() => {
+                  setEditingExpense(null);
+                  setExpenseDialogOpen(true);
+                }}
+                sx={{ fontSize: "0.75rem", fontWeight: 700, py: 0.25 }}
+              >
+                إضافة مصروف
+              </Button>
+            </Box>
             <Stack spacing={1}>
               {clientExpenses.slice(0, 3).map((exp) => (
-                <Card key={exp.id} elevation={0} sx={{ border: 1, borderColor: "divider", borderRadius: 1.5 }}>
+                <Card
+                  key={exp.id}
+                  elevation={0}
+                  onClick={() => handleEditExpense(exp)}
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1.5,
+                    cursor: "pointer",
+                    transition: "border-color 0.2s",
+                    "&:hover": { borderColor: "primary.main" },
+                  }}
+                >
                   <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 }, display: "flex", justifyContent: "space-between", gap: 1 }}>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={700} noWrap>{exp.description}</Typography>
@@ -1346,8 +1508,19 @@ export const ClientProfilePage = () => {
           setEditingDebt(null);
         }}
         fullScreen
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            pt: "env(safe-area-inset-top, 0px)",
+            bgcolor: "background.default",
+          },
+        }}
       >
-        <form onSubmit={handleDebtSubmit(onSubmitDebt)}>
+        <form
+          onSubmit={handleDebtSubmit(onSubmitDebt)}
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
+        >
           <DialogScreenHeader
             title={editingDebt ? "تعديل دين" : "إضافة دين جديد"}
             onClose={() => {
@@ -1356,8 +1529,8 @@ export const ClientProfilePage = () => {
             }}
           />
 
-          <Box sx={{ p: 3.5 }}>
-            <Stack spacing={3.5}>
+          <Box sx={{ p: 3, pb: "calc(24px + env(safe-area-inset-bottom, 0px))", flex: 1, overflowY: "auto" }}>
+            <Stack spacing={3}>
               <Controller
                 name="partyType"
                 control={debtControl}
@@ -1912,8 +2085,19 @@ export const ClientProfilePage = () => {
           setEditingParty(null);
         }}
         fullScreen
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            pt: "env(safe-area-inset-top, 0px)",
+            bgcolor: "background.default",
+          },
+        }}
       >
-        <form onSubmit={handlePartySubmit(onSubmitParty)}>
+        <form
+          onSubmit={handlePartySubmit(onSubmitParty)}
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
+        >
           <DialogScreenHeader
             title={editingParty ? "تعديل طرف" : "إضافة طرف"}
             onClose={() => {
@@ -1921,7 +2105,7 @@ export const ClientProfilePage = () => {
               setEditingParty(null);
             }}
           />
-          <Box sx={{ p: 3.5 }}>
+          <Box sx={{ p: 3, pb: "calc(24px + env(safe-area-inset-bottom, 0px))", flex: 1, overflowY: "auto" }}>
             <Stack spacing={3}>
               <Controller
                 name="name"
@@ -1959,21 +2143,30 @@ export const ClientProfilePage = () => {
                 )}
               />
             </Stack>
+            <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+              <Button
+                type="button"
+                onClick={() => {
+                  setPartyDialogOpen(false);
+                  setEditingParty(null);
+                }}
+                fullWidth
+                size="large"
+                sx={{ borderRadius: 2, py: 1.5 }}
+              >
+                إلغاء
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                sx={{ borderRadius: 2, py: 1.5 }}
+              >
+                {editingParty ? "حفظ" : "إضافة"}
+              </Button>
+            </Stack>
           </Box>
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button
-              type="button"
-              onClick={() => {
-                setPartyDialogOpen(false);
-                setEditingParty(null);
-              }}
-            >
-              إلغاء
-            </Button>
-            <Button type="submit" variant="contained">
-              {editingParty ? "حفظ" : "إضافة"}
-            </Button>
-          </DialogActions>
         </form>
       </Dialog>
 
@@ -1993,19 +2186,19 @@ export const ClientProfilePage = () => {
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <TrendingUp sx={{ fontSize: 24, color: "primary.main" }} />
             <Typography variant="h6" fontWeight={800}>
-              حساب الأرباح
+              حساب وتحديد نسبة الشركة
             </Typography>
           </Stack>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={3}>
+        <DialogContent sx={{ pt: 3, pb: 2 }}>
+          <Stack spacing={2.5}>
             <Box>
               <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ mb: 1.5 }}
+                sx={{ mb: 1.25, fontWeight: 600 }}
               >
-                أدخل النسبة المئوية للأرباح من المصروفات (مثال: 10)
+                النسبة المئوية المحتسبة من إجمالي المصروفات:
               </Typography>
               <TextField
                 fullWidth
@@ -2013,6 +2206,7 @@ export const ClientProfilePage = () => {
                 type="number"
                 value={profitPercentage}
                 onChange={(e) => setProfitPercentage(e.target.value)}
+                placeholder="مثال: 10 أو 15"
                 inputProps={{ min: 0, max: 100, step: 0.1 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
@@ -2020,65 +2214,117 @@ export const ClientProfilePage = () => {
                   },
                 }}
               />
+              <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+                {[5, 10, 15, 20, 25].map((pct) => (
+                  <Chip
+                    key={pct}
+                    label={`${pct}%`}
+                    size="small"
+                    variant={parseFloat(profitPercentage) === pct ? "filled" : "outlined"}
+                    color={parseFloat(profitPercentage) === pct ? "primary" : "default"}
+                    onClick={() => setProfitPercentage(pct.toString())}
+                    sx={{ cursor: "pointer", fontWeight: 700 }}
+                  />
+                ))}
+              </Stack>
             </Box>
-            {profitPercentage && !isNaN(parseFloat(profitPercentage)) && (
-              <Card
-                sx={{
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(139, 92, 246, 0.1)"
-                      : "#f3f4f6",
-                  border: `2px solid ${
-                    theme.palette.mode === "dark"
-                      ? "rgba(139, 92, 246, 0.3)"
-                      : "#e5e7eb"
-                  }`,
-                  borderRadius: 2,
-                  p: 2,
-                }}
-              >
-                <Stack spacing={1.5}>
-                  <Typography variant="body2" color="text.secondary">
-                    إجمالي المصروفات للعميل ({client?.name}):
+
+            {(() => {
+              const currentPct = parseFloat(profitPercentage) || 0;
+              const calcProfit = (summary.totalExpenses * currentPct) / 100;
+              const calcObligations = summary.totalExpenses + calcProfit + summary.totalDebts;
+              const calcNet = summary.totalPaid - calcObligations;
+
+              return (
+                <Card
+                  elevation={0}
+                  sx={{
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(45, 212, 191, 0.08)"
+                        : "rgba(15, 118, 110, 0.05)",
+                    border: `1px solid ${
+                      theme.palette.mode === "dark"
+                        ? "rgba(45, 212, 191, 0.25)"
+                        : "rgba(15, 118, 110, 0.18)"
+                    }`,
+                    borderRadius: 2.5,
+                    p: 2.25,
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mb: 1.5 }}>
+                    تفاصيل الاحتساب المالي للعميل ({client?.name})
                   </Typography>
-                  <Typography
-                    variant="h6"
-                    fontWeight={800}
-                    color="primary.main"
-                  >
-                    {formatCurrency(
-                      clientExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+
+                  <Stack spacing={1.2}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        إجمالي المصروفات ({summary.expenseCount} مصروف):
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800} className="num" color="error.main">
+                        {formatCurrency(summary.totalExpenses)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        نسبة الشركة ({currentPct}% من المصروفات):
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800} className="num" color="primary.main">
+                        {formatCurrency(calcProfit)}
+                      </Typography>
+                    </Box>
+
+                    {summary.totalDebts > 0 && (
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          ديون معلقة على العميل:
+                        </Typography>
+                        <Typography variant="body2" fontWeight={800} className="num" color="warning.main">
+                          {formatCurrency(summary.totalDebts)}
+                        </Typography>
+                      </Box>
                     )}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ opacity: 0.8 }}
-                  >
-                    عدد المصروفات: {clientExpenses.length}
-                  </Typography>
-                  <Divider />
-                  <Typography variant="body2" color="text.secondary">
-                    النسبة المئوية: {profitPercentage}%
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    fontWeight={900}
-                    color="success.main"
-                  >
-                    الأرباح المتوقعة:{" "}
-                    {formatCurrency(
-                      (clientExpenses.reduce(
-                        (sum, exp) => sum + exp.amount,
-                        0
-                      ) *
-                        parseFloat(profitPercentage)) /
-                        100
-                    )}
-                  </Typography>
-                </Stack>
-              </Card>
-            )}
+
+                    <Divider sx={{ my: 0.5 }} />
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="body2" fontWeight={700}>
+                        إجمالي المستحق (المصروفات + النسبة):
+                      </Typography>
+                      <Typography variant="body2" fontWeight={900} className="num">
+                        {formatCurrency(calcObligations)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        إجمالي المدفوع من العميل:
+                      </Typography>
+                      <Typography variant="body2" fontWeight={800} className="num" color="success.main">
+                        {formatCurrency(summary.totalPaid)}
+                      </Typography>
+                    </Box>
+
+                    <Divider sx={{ my: 0.5 }} />
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="subtitle2" fontWeight={800}>
+                        {calcNet >= 0 ? "فائض لصالح العميل:" : "المتبقي للسداد على العميل:"}
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        fontWeight={900}
+                        className="num"
+                        color={calcNet >= 0 ? "success.main" : "error.main"}
+                      >
+                        {formatCurrency(Math.abs(calcNet))}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Card>
+              );
+            })()}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 1 }}>
@@ -2093,11 +2339,10 @@ export const ClientProfilePage = () => {
             variant="contained"
             sx={{
               borderRadius: 2,
-              bgcolor: "#8b5cf6",
-              "&:hover": { bgcolor: "#7c3aed" },
+              fontWeight: 800,
             }}
           >
-            حفظ
+            حفظ النسبة
           </Button>
         </DialogActions>
       </Dialog>
@@ -2107,19 +2352,25 @@ export const ClientProfilePage = () => {
         open={editClientDialogOpen}
         onClose={() => setEditClientDialogOpen(false)}
         fullScreen
-        sx={{
-          "& .MuiDialog-paper": {
-            bgcolor: theme.palette.mode === "dark" ? "#1e293b" : "#fff",
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            pt: "env(safe-area-inset-top, 0px)",
+            bgcolor: "background.default",
           },
         }}
       >
-        <form onSubmit={handleClientSubmit(onSubmitClient)}>
+        <form
+          onSubmit={handleClientSubmit(onSubmitClient)}
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
+        >
           <DialogScreenHeader
             title="تعديل بيانات العميل"
             onClose={() => setEditClientDialogOpen(false)}
           />
 
-          <Box sx={{ p: 3.5 }}>
+          <Box sx={{ p: 3, pb: "calc(24px + env(safe-area-inset-bottom, 0px))", flex: 1, overflowY: "auto" }}>
             <Stack spacing={3}>
               <Controller
                 name="name"
@@ -2198,8 +2449,6 @@ export const ClientProfilePage = () => {
                 )}
               />
             </Stack>
-
-
 
             <Stack spacing={2} sx={{ mt: 4 }}>
               <Button

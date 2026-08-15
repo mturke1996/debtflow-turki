@@ -228,6 +228,7 @@ export const QuickExpenseSheet = ({
       maxWidth="xs"
       fullWidth
       className="dialog-premium"
+      sx={{ zIndex: 1350 }}
       transitionDuration={{ enter: 220, exit: 160 }}
       PaperProps={{
         sx: {
