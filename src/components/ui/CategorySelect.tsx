@@ -21,6 +21,7 @@ import { getAllExpenseCategories, useCategoryStore } from "@/store/useCategorySt
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_EXPENSE_CATEGORY,
   EXPENSE_CATEGORY_META,
   getCategoryMeta,
   normalizeCategoryLabel,
@@ -117,7 +118,12 @@ export const CategorySelect = ({
               key={cat}
               label={cat}
               size="small"
-              onClick={() => !disabled && onChange(cat)}
+              clickable={!disabled}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!disabled) onChange(cat);
+              }}
               sx={{
                 fontWeight: active ? 800 : 600,
                 fontSize: "0.72rem",
@@ -128,6 +134,7 @@ export const CategorySelect = ({
                 bgcolor: active ? alpha(meta.tone, 0.12) : "transparent",
                 color: active ? meta.tone : "text.secondary",
                 cursor: disabled ? "default" : "pointer",
+                userSelect: "none",
                 "&:hover": disabled
                   ? {}
                   : {
@@ -141,9 +148,10 @@ export const CategorySelect = ({
       </Box>
 
       <FormControl fullWidth>
-        <InputLabel>{label}</InputLabel>
+        <InputLabel id="category-select-label">{label}</InputLabel>
         <Select
-          value={categories.includes(displayValue) ? displayValue : value}
+          labelId="category-select-label"
+          value={categories.includes(displayValue) ? displayValue : (categories.includes(value) ? value : DEFAULT_EXPENSE_CATEGORY)}
           label={label}
           disabled={disabled}
           onChange={(e) => onChange(String(e.target.value))}
@@ -152,7 +160,10 @@ export const CategorySelect = ({
               {normalizeCategoryLabel(String(v))}
             </Typography>
           )}
-          MenuProps={{ PaperProps: { sx: { maxHeight: 440, borderRadius: 2 } } }}
+          MenuProps={{
+            sx: { zIndex: 1600 },
+            PaperProps: { sx: { maxHeight: 440, borderRadius: 2 } },
+          }}
           sx={{ borderRadius: 2 }}
         >
           <ListSubheader sx={{ fontWeight: 800, lineHeight: 2.5, bgcolor: "background.paper" }}>
@@ -183,16 +194,27 @@ export const CategorySelect = ({
       ) : null}
 
       <Button
+        type="button"
         size="small"
         startIcon={<Add />}
-        onClick={() => setAddOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setAddOpen(true);
+        }}
         disabled={disabled}
         sx={{ mt: 1.25, fontWeight: 700 }}
       >
         إضافة فئة مخصصة
       </Button>
 
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        sx={{ zIndex: 1650 }}
+      >
         <DialogTitle sx={{ fontWeight: 800 }}>فئة مصروف جديدة</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -228,8 +250,8 @@ export const CategorySelect = ({
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setAddOpen(false)}>إلغاء</Button>
-          <Button variant="contained" onClick={handleAdd}>
+          <Button type="button" onClick={() => setAddOpen(false)}>إلغاء</Button>
+          <Button type="button" variant="contained" onClick={handleAdd}>
             حفظ الفئة
           </Button>
         </DialogActions>

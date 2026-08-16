@@ -131,6 +131,36 @@ export const ClientProfilePage = () => {
   const [debtsSearchQuery, setDebtsSearchQuery] = useState("");
   const [editClientDialogOpen, setEditClientDialogOpen] = useState(false);
 
+  const isAnyModalOpen = Boolean(
+    activeSection ||
+    expenseDialogOpen ||
+    paymentDialogOpen ||
+    debtDialogOpen ||
+    debtsListDialogOpen ||
+    payDebtDialogOpen ||
+    partyProfileDialogOpen ||
+    partyDialogOpen ||
+    profitDialogOpen ||
+    editClientDialogOpen
+  );
+
+  useEffect(() => {
+    if (!isAnyModalOpen) {
+      // Force release any stuck overflow/scroll lock on mobile browsers
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.paddingRight = "";
+    }
+  }, [isAnyModalOpen]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, []);
+
   const client = clients.find((c) => c.id === clientId);
 
   // Client Edit Form

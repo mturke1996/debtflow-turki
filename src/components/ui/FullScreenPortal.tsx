@@ -17,7 +17,7 @@ export function FullScreenPortal({ open, children, className }: FullScreenPortal
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prev === "hidden" ? "" : (prev || "");
     };
   }, [open]);
 

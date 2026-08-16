@@ -386,6 +386,10 @@ export const QuickExpenseSheet = ({
                     {...field}
                     label="العميل / المشروع"
                     sx={{ borderRadius: "16px" }}
+                    MenuProps={{
+                      sx: { zIndex: 1600 },
+                      PaperProps: { sx: { maxHeight: 360, borderRadius: "14px" } },
+                    }}
                     startAdornment={
                       <InputAdornment position="start" sx={{ ml: 1 }}>
                         <Briefcase size={17} color={theme.palette.text.secondary} strokeWidth={2} />
@@ -467,6 +471,7 @@ export const QuickExpenseSheet = ({
                   onChange={(newValue) => field.onChange(newValue || dayjs())}
                   format="DD/MM/YYYY"
                   slotProps={{
+                    popper: { sx: { zIndex: 1600 } },
                     textField: {
                       fullWidth: true,
                       sx: sheetFieldSx,
